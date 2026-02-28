@@ -7,7 +7,7 @@ import { parseUnits } from 'viem';
 import { Modal } from '@/components/shared/Modal';
 import { Button } from '@/components/shared/Button';
 import { useDeposit } from '@/hooks/useDeposit';
-import { useVaultBalances } from '@/hooks/useVaultBalances';
+import { useUserUSDCBalance } from '@/hooks/useUserUSDCBalance';
 import { formatCurrency } from '@/lib/format';
 import { shortenAddress } from '@/lib/utils';
 
@@ -36,7 +36,7 @@ const PRESET_LABELS = ['$10K', '$25K', '$50K', '$100K'] as const;
 
 export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const { isConnected } = useAccount();
-  const { liquidUSDC } = useVaultBalances();
+  const { balance: userUSDC } = useUserUSDCBalance();
   const depositMutation = useDeposit();
 
   const [amount, setAmount] = useState('');
@@ -44,7 +44,12 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [txHash, setTxHash] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
+<<<<<<< HEAD
+  // Available USDC balance (user's wallet, converted from bigint)
+  const availableBalance = Number(userUSDC) / 1e6;
+=======
   const availableBalance = Number(liquidUSDC) / 1e6;
+>>>>>>> f4d4412bd3c1db5f06c3ed2ffc406dde715b4920
 
   // Reset state when modal opens/closes
   useEffect(() => {
