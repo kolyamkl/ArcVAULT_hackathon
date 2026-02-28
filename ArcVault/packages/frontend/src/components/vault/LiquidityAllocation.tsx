@@ -14,6 +14,7 @@ interface LiquidityAllocationProps {
   onUpdateThreshold?: (value: number) => void;
   onRebalance?: (usycAmount: number, liquidAmount: number) => void;
   isUpdating?: boolean;
+  canUpdate?: boolean;
 }
 
 export function LiquidityAllocation({
@@ -24,6 +25,7 @@ export function LiquidityAllocation({
   onUpdateThreshold,
   onRebalance,
   isUpdating = false,
+  canUpdate = true,
 }: LiquidityAllocationProps) {
   const [thresholdMode, setThresholdMode] = useState<ThresholdMode>('percent');
   const [thresholdInput, setThresholdInput] = useState(String(threshold));
@@ -83,6 +85,11 @@ export function LiquidityAllocation({
 
       {/* Threshold controls */}
       <div className="space-y-3">
+        {!canUpdate && (
+          <p className="text-xs text-[#EF4444]">
+            Your wallet does not have permission to update the threshold (requires CFO role).
+          </p>
+        )}
         {/* Mode toggle */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted">Set threshold by:</span>
@@ -119,7 +126,8 @@ export function LiquidityAllocation({
                 type="number"
                 value={thresholdInput}
                 onChange={(e) => setThresholdInput(e.target.value)}
-                className="w-full bg-[#0A0A0A60] border border-[#2A2A2A] rounded-lg px-3 py-2 pr-8 text-sm text-foreground outline-none focus:border-[#C9A96250]"
+                disabled={!canUpdate}
+                className="w-full bg-[#0A0A0A60] border border-[#2A2A2A] rounded-lg px-3 py-2 pr-8 text-sm text-foreground outline-none focus:border-[#C9A96250] disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Threshold %"
                 min={0}
                 max={100}
@@ -133,14 +141,15 @@ export function LiquidityAllocation({
                 type="number"
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
-                className="w-full bg-[#0A0A0A60] border border-[#2A2A2A] rounded-lg pl-7 pr-3 py-2 text-sm text-foreground outline-none focus:border-[#C9A96250]"
+                disabled={!canUpdate}
+                className="w-full bg-[#0A0A0A60] border border-[#2A2A2A] rounded-lg pl-7 pr-3 py-2 text-sm text-foreground outline-none focus:border-[#C9A96250] disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Amount in USD"
                 min={0}
               />
             </div>
           )}
           <button
-            disabled={isUpdating}
+            disabled={isUpdating || !canUpdate}
             onClick={() => {
               if (thresholdMode === 'percent') {
                 const v = Number(thresholdInput);

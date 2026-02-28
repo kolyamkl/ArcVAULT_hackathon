@@ -7,6 +7,23 @@ import {
 } from '@/lib/contracts';
 
 // ---------------------------------------------------------------------------
+// Error helpers
+// ---------------------------------------------------------------------------
+
+/** AccessControlUnauthorizedAccount(address account, bytes32 neededRole) */
+const ACCESS_CONTROL_ERROR_SELECTOR = '0xe2517d3f';
+
+function decodeAccessControlError(error: unknown): string | null {
+  const message =
+    error instanceof Error ? error.message : String(error);
+
+  if (message.includes(ACCESS_CONTROL_ERROR_SELECTOR) || message.includes('AccessControlUnauthorizedAccount')) {
+    return 'Your wallet does not have permission to update the threshold (requires CFO role).';
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
@@ -25,13 +42,19 @@ export function useSetThreshold() {
     mutationFn: async ({ threshold }: { threshold: bigint }) => {
       if (!publicClient) throw new Error('Wallet not connected');
 
-      const hash = await writeContractAsync({
-        address: TREASURY_VAULT_ADDRESS,
-        abi: TreasuryVaultABI,
-        functionName: 'setLiquidityThreshold',
-        args: [threshold],
-      });
-      return await publicClient.waitForTransactionReceipt({ hash });
+      try {
+        const hash = await writeContractAsync({
+          address: TREASURY_VAULT_ADDRESS,
+          abi: TreasuryVaultABI,
+          functionName: 'setLiquidityThreshold',
+          args: [threshold],
+        });
+        return await publicClient.waitForTransactionReceipt({ hash });
+      } catch (err) {
+        const friendly = decodeAccessControlError(err);
+        if (friendly) throw new Error(friendly);
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vault.balances });

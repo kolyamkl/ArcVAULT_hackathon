@@ -12,6 +12,7 @@ import { SweepModal } from '@/components/vault/SweepModal';
 import { RedeemModal } from '@/components/vault/RedeemModal';
 import { useVaultBalances } from '@/hooks/useVaultBalances';
 import { useSetThreshold } from '@/hooks/useSetThreshold';
+import { useHasCFORole } from '@/hooks/useHasCFORole';
 
 export default function VaultPage() {
   const [depositOpen, setDepositOpen] = useState(false);
@@ -23,6 +24,7 @@ export default function VaultPage() {
 
   const { liquidUSDC, usycBalance, totalValue, threshold } = useVaultBalances();
   const setThreshold = useSetThreshold();
+  const { hasCFORole } = useHasCFORole();
 
   // Convert on-chain bigint values (6 decimals) to numbers for the UI
   const totalVal = Number(totalValue) / 1e6;
@@ -68,6 +70,7 @@ export default function VaultPage() {
         onUpdateThreshold={handleUpdateThreshold}
         onRebalance={() => alert('Rebalance coming soon')}
         isUpdating={setThreshold.isPending}
+        canUpdate={hasCFORole}
       />
       <TransactionHistoryTable />
 
