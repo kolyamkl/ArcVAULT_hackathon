@@ -73,8 +73,10 @@ interface ExecutionContext {
 // ---------------------------------------------------------------------------
 
 function log(ctx: ExecutionContext, message: string, status: ExecutionLog['status'], nodeId?: string) {
+  const ts = new Date().toISOString();
+  console.log(`[Pipeline] [${status.toUpperCase()}] ${nodeId ? `[${nodeId}] ` : ''}${message}`);
   ctx.logs.push({
-    timestamp: new Date().toISOString(),
+    timestamp: ts,
     message,
     status,
     nodeId,
@@ -225,12 +227,15 @@ async function executeFXConversion(
 
   const fxAdapter = getStableFXAdapter();
   const amountBigint = BigInt(Math.round(amount * 1e6));
+  console.log(`[Pipeline][FX] Adapter: ${fxAdapter.constructor.name}, amount: ${amount} ${fromCurrency} -> ${toCurrency} (base=${amountBigint})`);
 
   // Get quote
   const quote = await fxAdapter.getQuote(fromCurrency, toCurrency, amountBigint);
+  console.log(`[Pipeline][FX] Quote received: id=${quote.quoteId}, rate=${quote.rate}, from=${quote.fromAmount}, to=${quote.toAmount}`);
 
   // Execute swap
   const swapResult = await fxAdapter.executeSwap(quote.quoteId);
+  console.log(`[Pipeline][FX] Swap result: txHash=${swapResult.txHash}, status=${swapResult.status}`);
 
   // Persist FXQuote to DB
   const fxRecord = await prisma.fXQuote.create({
@@ -312,6 +317,7 @@ async function executePayoutNode(
 
   const amountWei = parseUnits(amount.toString(), 6); // USDC has 6 decimals
   const paymentRef = pad(toHex(Date.now()), { size: 32 });
+  console.log(`[Pipeline][Payout] ${name}: ${amount} ${currency} -> ${walletAddress} (wei=${amountWei})`);
 
   let txHash: string;
   let onChainPayoutId: number;
@@ -336,7 +342,9 @@ async function executePayoutNode(
     ],
   });
 
+  console.log(`[Pipeline][Payout] ${name}: tx sent, hash=${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  console.log(`[Pipeline][Payout] ${name}: tx confirmed, block=${receipt.blockNumber}`);
   txHash = hash;
 
   // Decode PayoutCreated event to get onChainPayoutId
@@ -680,7 +688,10 @@ export async function executePipeline(
 ): Promise<void> {
   const nodes = pipeline.nodes as PipelineNode[];
   const edges = pipeline.edges as PipelineEdge[];
+  console.log(`[Pipeline] Starting execution: pipelineId=${pipeline.id}, executionId=${executionId}, triggeredBy=${triggeredBy}`);
+  console.log(`[Pipeline] Nodes: ${nodes.length}, Edges: ${edges.length}`);
   const sortedNodes = topologicalSort(nodes, edges);
+  console.log(`[Pipeline] Topological order: ${sortedNodes.map(n => `${n.id}(${n.type || n.data.type})`).join(' -> ')}`);
 
   // Build parent map: for each node, which nodes are its direct parents
   const parentMap = new Map<string, string[]>();
@@ -713,6 +724,9 @@ export async function executePipeline(
   await persistProgress(executionId, ctx);
 
   for (const node of sortedNodes) {
+    const nodeType = node.type || (node.data.type as string) || 'unknown';
+    console.log(`[Pipeline] Processing node: ${node.id} (${nodeType}) — ${(node.data.name as string) || 'unnamed'}`);
+
     // Check if node was marked as skipped by a condition branch
     if (ctx.skippedNodeIds.has(node.id)) {
       updateStep(ctx, node.id, { status: 'skipped' });

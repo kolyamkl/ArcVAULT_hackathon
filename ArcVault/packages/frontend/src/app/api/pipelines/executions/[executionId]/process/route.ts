@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const body = await req.json();
     const { pipelineId, triggeredBy } = body;
+    console.log(`[POST /api/pipelines/executions/${executionId}/process] Received: pipelineId=${pipelineId}, triggeredBy=${triggeredBy}`);
 
     if (!pipelineId || !executionId) {
       return NextResponse.json({ error: 'Missing pipelineId or executionId' }, { status: 400 });
@@ -33,9 +34,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     });
 
     if (claimed.count === 0) {
+      console.log(`[POST /api/pipelines/executions/${executionId}/process] Already claimed or not resumable`);
       // Already claimed by another invocation or not in a resumable state
       return NextResponse.json({ error: 'Execution already claimed or not in a resumable state' }, { status: 409 });
     }
+    console.log(`[POST /api/pipelines/executions/${executionId}/process] Claimed execution, transitioning to RUNNING`);
 
     // Set back to RUNNING so the polling endpoint shows correct status
     await prisma.pipelineExecution.update({
@@ -61,7 +64,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     // Run the engine — this writes progress to DB after each node
+    console.log(`[POST /api/pipelines/executions/${executionId}/process] Starting pipeline engine for "${pipeline.name}"`);
     await executePipeline(pipeline, executionId, triggeredBy || 'unknown');
+    console.log(`[POST /api/pipelines/executions/${executionId}/process] Pipeline engine finished`);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

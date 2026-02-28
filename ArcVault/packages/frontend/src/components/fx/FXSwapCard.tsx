@@ -10,12 +10,15 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAccount } from 'wagmi';
+import { parseUnits } from 'viem';
 import { useFXQuote } from '@/hooks/useFXQuote';
 import { useExecuteSwap } from '@/hooks/useExecuteSwap';
+import { useOnChainSwap } from '@/hooks/useOnChainSwap';
 import { useVaultBalances } from '@/hooks/useVaultBalances';
 import { formatCurrency, shortenAddress } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Skeleton } from '@/components/shared/Skeleton';
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
 
 // ---------------------------------------------------------------------------
 // Currency metadata
@@ -32,9 +35,6 @@ interface CurrencyMeta {
 const CURRENCIES: CurrencyMeta[] = [
   { code: 'USDC', display: 'USDC', color: '#D4A853', symbol: '$', fiatSymbol: '$' },
   { code: 'EURC', display: 'EURe', color: '#7EC97A', symbol: '\u20AC', fiatSymbol: '\u20AC' },
-  { code: 'GBPC', display: 'GBPc', color: '#5B8DEF', symbol: '\u00A3', fiatSymbol: '\u00A3' },
-  { code: 'JPYC', display: 'JPYc', color: '#E06060', symbol: '\u00A5', fiatSymbol: '\u00A5' },
-  { code: 'CADC', display: 'CADc', color: '#E0A84C', symbol: 'C$', fiatSymbol: 'C$' },
 ];
 
 function getCurrency(code: string): CurrencyMeta {
@@ -249,6 +249,7 @@ export function FXSwapCard() {
   const { isConnected } = useAccount();
   const { liquidUSDC } = useVaultBalances();
   const executeSwap = useExecuteSwap();
+  const onChainSwap = useOnChainSwap();
 
   // Local state
   const [fromCurrency, setFromCurrency] = useState('USDC');
@@ -348,34 +349,55 @@ export function FXSwapCard() {
     [fromCurrency, toCurrency],
   );
 
+  // Check if both tokens have on-chain addresses for real token movement
+  const hasOnChainTokens = Boolean(TOKEN_ADDRESSES[fromCurrency] && TOKEN_ADDRESSES[toCurrency]);
+
   const handleExecute = useCallback(async () => {
     if (!quote) return;
 
     try {
       setErrorMsg('');
-      const result = await executeSwap.mutateAsync({
-        quoteId: quote.id,
-        fromCurrency,
-        toCurrency,
-        fromAmount,
-      });
+
+      let txHash: string | undefined;
+
+      if (hasOnChainTokens) {
+        // On-chain swap: approve + requestQuote + executeSwap on StableFX contract
+        const amount = parseUnits(fromAmount, 6);
+        const result = await onChainSwap.mutateAsync({
+          fromCurrency,
+          toCurrency,
+          amount,
+        });
+        txHash = result.txHash;
+      } else {
+        // API-only swap (for pairs without deployed tokens)
+        const result = await executeSwap.mutateAsync({
+          quoteId: quote.id,
+          fromCurrency,
+          toCurrency,
+          fromAmount,
+        });
+        txHash = result.txHash;
+      }
+
       setSuccessMsg(
-        `Swap executed! TX: ${result.txHash ? shortenAddress(result.txHash) : 'confirmed'}`,
+        `Swap executed! TX: ${txHash ? shortenAddress(txHash) : 'confirmed'}`,
       );
       setFromAmount('');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Swap failed');
     }
-  }, [quote, executeSwap, fromCurrency, toCurrency, fromAmount]);
+  }, [quote, executeSwap, onChainSwap, fromCurrency, toCurrency, fromAmount, hasOnChainTokens]);
 
   // Disable conditions for the execute button
+  const isSwapping = executeSwap.isPending || onChainSwap.isPending;
   const canExecute =
     isConnected &&
     !!quote &&
     secondsLeft > 0 &&
     !!fromAmount &&
     Number(fromAmount) > 0 &&
-    !executeSwap.isPending;
+    !isSwapping;
 
   // Computed display values
   const fromMeta = getCurrency(fromCurrency);
@@ -390,7 +412,7 @@ export function FXSwapCard() {
   // CTA label
   const ctaLabel = !isConnected
     ? 'Connect Wallet to Swap'
-    : executeSwap.isPending
+    : isSwapping
       ? 'Processing...'
       : !fromAmount || numericFrom <= 0
         ? 'Enter an Amount'
@@ -437,7 +459,7 @@ export function FXSwapCard() {
             onCurrencyChange={handleFromCurrencyChange}
             fiatEquivalent={`\u2248 ${fromMeta.fiatSymbol}${numericFrom.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             balance={`Balance: ${formatCurrency(availableBalance, fromCurrency)}`}
-            disabled={executeSwap.isPending}
+            disabled={isSwapping}
           />
 
           {/* ---- Swap Direction Button ---- */}
@@ -547,7 +569,7 @@ export function FXSwapCard() {
                 : 'bg-[#D4A853]/40 text-white/50 cursor-not-allowed',
             )}
           >
-            {executeSwap.isPending && (
+            {isSwapping && (
               <svg
                 className="animate-spin h-4 w-4"
                 xmlns="http://www.w3.org/2000/svg"
@@ -569,7 +591,7 @@ export function FXSwapCard() {
                 />
               </svg>
             )}
-            {canExecute && !executeSwap.isPending && (
+            {canExecute && !isSwapping && (
               <ArrowLeftRight className="w-[18px] h-[18px]" />
             )}
             <span>{ctaLabel}</span>
@@ -579,7 +601,7 @@ export function FXSwapCard() {
           <div className="flex items-center justify-center gap-1.5 pt-2">
             <Route className="w-3.5 h-3.5 text-[#A09D95]" />
             <span className="text-xs text-[#A09D95]">
-              Best route via Uniswap V3
+              {hasOnChainTokens ? 'On-chain via StableFX contract' : 'Off-chain via Circle StableFX API'}
             </span>
           </div>
         </div>

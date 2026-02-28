@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { quoteId } = parsed.data;
+    console.log(`[POST /api/fx/execute] Executing swap for quoteId: ${quoteId}`);
 
     // Look up the quote from DB — gracefully handle DB being offline
     let fxQuote: {
@@ -39,6 +40,8 @@ export async function POST(req: NextRequest) {
       console.warn("[POST /api/fx/execute] DB unavailable, proceeding without quote validation:", dbError);
       dbAvailable = false;
     }
+
+    console.log(`[POST /api/fx/execute] DB available: ${dbAvailable}, quote found: ${!!fxQuote}`);
 
     if (dbAvailable && fxQuote) {
       if (fxQuote.status === "EXECUTED") {
@@ -70,12 +73,15 @@ export async function POST(req: NextRequest) {
 
     // Execute via adapter
     const adapter = getStableFXAdapter();
+    console.log(`[POST /api/fx/execute] Adapter: ${adapter.constructor.name}, calling executeSwap(${quoteId})`);
     const result = await adapter.executeSwap(quoteId);
+    console.log("[POST /api/fx/execute] Swap result:", result);
 
     // Persist to DB if available
     const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 5042002);
 
     if (dbAvailable && fxQuote) {
+      console.log("[POST /api/fx/execute] Persisting swap result to DB...");
       try {
         const [updatedQuote] = await prisma.$transaction([
           prisma.fXQuote.update({
@@ -106,6 +112,7 @@ export async function POST(req: NextRequest) {
           }),
         ]);
 
+        console.log("[POST /api/fx/execute] DB persisted successfully, returning result");
         return NextResponse.json({
           ...serializeDecimals(updatedQuote),
           ...result,
