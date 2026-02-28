@@ -48,6 +48,7 @@
     "eslint-config-next": "^14.2.0"
   },
   "prisma": {
+    "schema": "prisma/schema.prisma",
     "seed": "tsx prisma/seed.ts"
   }
 }
