@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getStableFXAdapter } from "@/services/index";
+import { fxExecuteSchema, serializeDecimals } from "@/lib/validations/api";
+
+// POST /api/fx/execute — execute a previously quoted FX swap
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const parsed = fxExecuteSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { quoteId } = parsed.data;
+
+    // Look up the quote — try by id first, then check status
+    const fxQuote = await prisma.fXQuote.findFirst({
+      where: { id: quoteId },
+    });
+
+    if (!fxQuote) {
+      return NextResponse.json(
+        { error: "Quote not found" },
+        { status: 404 }
+      );
+    }
+
+    if (fxQuote.status === "EXECUTED") {
+      return NextResponse.json(
+        { error: "Quote already executed" },
+        { status: 409 }
+      );
+    }
+
+    if (fxQuote.status === "EXPIRED" || new Date() > fxQuote.expiresAt) {
+      // Mark as expired if not already
+      if (fxQuote.status !== "EXPIRED") {
+        await prisma.fXQuote.update({
+          where: { id: fxQuote.id },
+          data: { status: "EXPIRED" },
+        });
+      }
+      return NextResponse.json(
+        { error: "Quote has expired" },
+        { status: 410 }
+      );
+    }
+
+    // Execute via adapter
+    const adapter = getStableFXAdapter();
+    const result = await adapter.executeSwap(quoteId);
+
+    // Update quote and create transaction atomically
+    const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 5042002);
+
+    const [updatedQuote] = await prisma.$transaction([
+      prisma.fXQuote.update({
+        where: { id: fxQuote.id },
+        data: {
+          status: "EXECUTED",
+          txHash: result.txHash,
+        },
+      }),
+      prisma.transaction.create({
+        data: {
+          type: "FX_SWAP",
+          txHash: result.txHash,
+          fromAddress: null,
+          toAddress: null,
+          amount: fxQuote.fromAmount,
+          currency: fxQuote.fromCurrency,
+          status: result.status === "success" ? "COMPLETED" : "FAILED",
+          metadata: {
+            fromCurrency: fxQuote.fromCurrency,
+            toCurrency: fxQuote.toCurrency,
+            fromAmount: fxQuote.fromAmount.toString(),
+            toAmount: fxQuote.toAmount.toString(),
+            rate: fxQuote.rate.toString(),
+          },
+          chainId,
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      ...serializeDecimals(updatedQuote),
+      ...result,
+    });
+  } catch (error) {
+    console.error("[POST /api/fx/execute]", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
