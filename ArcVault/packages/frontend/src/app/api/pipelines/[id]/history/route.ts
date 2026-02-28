@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parsePagination, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 // GET /api/pipelines/[id]/history — execution history for a pipeline

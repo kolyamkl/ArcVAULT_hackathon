@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { executePipelineSchema } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 // POST /api/pipelines/[id]/execute — trigger pipeline execution

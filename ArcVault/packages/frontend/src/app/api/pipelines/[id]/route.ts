@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { updatePipelineSchema, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 // GET /api/pipelines/[id] — get a single pipeline with recent executions

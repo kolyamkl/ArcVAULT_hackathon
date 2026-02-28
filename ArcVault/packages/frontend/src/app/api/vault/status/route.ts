@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/vault/status — latest vault snapshot
 export async function GET() {
   try {

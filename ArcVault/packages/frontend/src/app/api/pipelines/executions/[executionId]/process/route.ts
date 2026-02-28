@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { executePipeline } from '@/lib/pipeline-engine';
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = { params: Promise<{ executionId: string }> };
 
 /**

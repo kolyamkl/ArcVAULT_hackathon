@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import prisma from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { createPayoutSchema, parsePagination, serializeDecimals } from "@/lib/validations/api";
 
 // GET /api/payouts — list payouts with pagination & optional status filter

@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { createPipelineSchema, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/pipelines — list all pipelines ordered by most recently updated
 export async function GET() {
   try {

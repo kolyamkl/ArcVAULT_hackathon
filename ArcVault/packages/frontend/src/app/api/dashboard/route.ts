@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { serializeDecimals } from "@/lib/validations/api";
 
 // GET /api/dashboard — aggregated dashboard statistics

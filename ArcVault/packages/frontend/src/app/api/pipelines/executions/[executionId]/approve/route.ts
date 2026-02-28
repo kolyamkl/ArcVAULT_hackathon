@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyMessage } from 'viem';
 import prisma from '@/lib/prisma';
 
+export const dynamic = "force-dynamic";
+
 /**
  * Build the approval message server-side (must match the client version).
  */

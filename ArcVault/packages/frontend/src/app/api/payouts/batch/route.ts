@@ -3,6 +3,8 @@ import { randomUUID } from "crypto";
 import prisma from "@/lib/prisma";
 import { batchPayoutSchema, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/payouts/batch — create multiple payouts atomically
 export async function POST(req: NextRequest) {
   try {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/payouts/[id] — get a single payout by ID
 export async function GET(
   _req: NextRequest,
