@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { executePipeline } from "@/lib/pipeline-engine";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/cron/process-delays
  *
