@@ -44,12 +44,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [txHash, setTxHash] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
-<<<<<<< HEAD
   // Available USDC balance (user's wallet, converted from bigint)
   const availableBalance = Number(userUSDC) / 1e6;
-=======
-  const availableBalance = Number(liquidUSDC) / 1e6;
->>>>>>> f4d4412bd3c1db5f06c3ed2ffc406dde715b4920
 
   // Reset state when modal opens/closes
   useEffect(() => {
