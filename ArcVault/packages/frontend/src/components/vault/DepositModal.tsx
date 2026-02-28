@@ -8,7 +8,7 @@ import { Modal } from '@/components/shared/Modal';
 import { Input } from '@/components/shared/Input';
 import { Button } from '@/components/shared/Button';
 import { useDeposit } from '@/hooks/useDeposit';
-import { useVaultBalances } from '@/hooks/useVaultBalances';
+import { useUserUSDCBalance } from '@/hooks/useUserUSDCBalance';
 import { formatCurrency } from '@/lib/format';
 import { shortenAddress } from '@/lib/utils';
 
@@ -35,7 +35,7 @@ const EXPLORER_URL = process.env.NEXT_PUBLIC_ARC_EXPLORER_URL || 'https://testne
 
 export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const { isConnected } = useAccount();
-  const { liquidUSDC } = useVaultBalances();
+  const { balance: userUSDC } = useUserUSDCBalance();
   const depositMutation = useDeposit();
 
   const [amount, setAmount] = useState('');
@@ -43,8 +43,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [txHash, setTxHash] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Available USDC balance (from vault contract read, converted from bigint)
-  const availableBalance = Number(liquidUSDC) / 1e6;
+  // Available USDC balance (user's wallet, converted from bigint)
+  const availableBalance = Number(userUSDC) / 1e6;
 
   // Reset state when modal opens/closes
   useEffect(() => {
