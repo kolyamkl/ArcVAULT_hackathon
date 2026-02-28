@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Check, AlertCircle, ExternalLink, ArrowDownToLine, ShieldCheck, ChevronDown } from 'lucide-react';
+import { Check, AlertCircle, ExternalLink, ArrowRightLeft, ShieldCheck, ShieldAlert, ChevronDown } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Modal } from '@/components/shared/Modal';
 import { Button } from '@/components/shared/Button';
-import { useDeposit } from '@/hooks/useDeposit';
-import { useUserUSDCBalance } from '@/hooks/useUserUSDCBalance';
+import { useSweepToUSYC } from '@/hooks/useSweepToUSYC';
+import { useVaultBalances } from '@/hooks/useVaultBalances';
 import { formatCurrency } from '@/lib/format';
 import { shortenAddress } from '@/lib/utils';
 
@@ -15,12 +15,12 @@ import { shortenAddress } from '@/lib/utils';
 // Types
 // ---------------------------------------------------------------------------
 
-interface DepositModalProps {
+interface SweepModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TxStep = 'input' | 'approving' | 'depositing' | 'success' | 'error';
+type TxStep = 'input' | 'sweeping' | 'success' | 'error';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,22 +34,17 @@ const PRESET_LABELS = ['$10K', '$25K', '$50K', '$100K'] as const;
 // Component
 // ---------------------------------------------------------------------------
 
-export function DepositModal({ isOpen, onClose }: DepositModalProps) {
+export function SweepModal({ isOpen, onClose }: SweepModalProps) {
   const { isConnected } = useAccount();
-  const { balance: userUSDC } = useUserUSDCBalance();
-  const depositMutation = useDeposit();
+  const { liquidUSDC } = useVaultBalances();
+  const sweepMutation = useSweepToUSYC();
 
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<TxStep>('input');
   const [txHash, setTxHash] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
-<<<<<<< HEAD
-  // Available USDC balance (user's wallet, converted from bigint)
-  const availableBalance = Number(userUSDC) / 1e6;
-=======
   const availableBalance = Number(liquidUSDC) / 1e6;
->>>>>>> f4d4412bd3c1db5f06c3ed2ffc406dde715b4920
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -70,11 +65,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   }, [step, onClose]);
 
   const numericAmount = parseFloat(amount) || 0;
-  const isValidAmount = numericAmount > 0;
-
-  const handleMaxClick = useCallback(() => {
-    setAmount(String(availableBalance));
-  }, [availableBalance]);
+  const isValidAmount = numericAmount > 0 && numericAmount <= availableBalance;
 
   const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^0-9.]/g, '');
@@ -84,15 +75,19 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     setAmount(raw);
   }, []);
 
+  const handleMaxClick = useCallback(() => {
+    setAmount(String(availableBalance));
+  }, [availableBalance]);
+
   const handlePreset = useCallback((value: number) => {
     setAmount(String(value));
   }, []);
 
-  const handleDeposit = useCallback(async () => {
+  const handleSweep = useCallback(async () => {
     if (!isValidAmount || !amount) return;
 
     try {
-      setStep('approving');
+      setStep('sweeping');
       const amountBigInt = parseUnits(amount, 6);
 
       if (amountBigInt === 0n) {
@@ -101,17 +96,14 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         return;
       }
 
-      const receipt = await depositMutation.mutateAsync({
-        amount: amountBigInt,
-        onApproved: () => setStep('depositing'),
-      });
+      const receipt = await sweepMutation.mutateAsync({ amount: amountBigInt });
       setTxHash(receipt.transactionHash);
       setStep('success');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Transaction failed');
       setStep('error');
     }
-  }, [isValidAmount, amount, depositMutation]);
+  }, [isValidAmount, amount, sweepMutation]);
 
   const handleRetry = useCallback(() => {
     setStep('input');
@@ -122,23 +114,37 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     ? numericAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })
     : '0';
 
+  let validationError: string | undefined;
+  if (numericAmount > availableBalance) {
+    validationError = 'Exceeds available liquid balance';
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="">
       <div className="-mt-4">
         {/* Custom header */}
         <div className="mb-4">
-          <h3 className="text-[22px] font-bold text-foreground">Deposit USDC</h3>
-          <p className="text-sm text-muted mt-1">Add funds to your ArcVault treasury</p>
+          <h3 className="text-[22px] font-bold text-foreground">Sweep to USYC</h3>
+          <p className="text-sm text-muted mt-1">Convert liquid USDC into yield-bearing USYC</p>
         </div>
         <div className="h-px bg-[#383430] mb-5" />
 
         {/* Input step */}
-        {(step === 'input' || step === 'approving' || step === 'depositing') && (
+        {(step === 'input' || step === 'sweeping') && (
           <div className="space-y-4">
+            {/* Role requirement notice */}
+            <div className="flex items-start gap-2 p-3 bg-[#E0A84C10] rounded-lg border border-[#E0A84C30]">
+              <ShieldAlert className="w-4 h-4 text-[#E0A84C] flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-[#A09D95]">
+                Sweeping requires TREASURY_MANAGER_ROLE. The transaction will revert if your
+                wallet does not have the required role.
+              </p>
+            </div>
+
             {/* Amount input area */}
             <div>
               <p className="text-sm text-muted mb-2">Amount</p>
-              <div className="bg-[#0A0E1A] rounded-xl border border-[#383430] h-[72px] flex items-center px-4">
+              <div className={`bg-[#0A0E1A] rounded-xl border ${validationError ? 'border-red-500' : 'border-[#383430]'} h-[72px] flex items-center px-4`}>
                 <div className="flex-1">
                   <div className="flex items-center">
                     <span className="text-muted text-2xl mr-1">$</span>
@@ -161,6 +167,9 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
                   <ChevronDown className="w-3.5 h-3.5 text-muted" />
                 </div>
               </div>
+              {validationError && (
+                <p className="text-xs text-red-500 mt-1">{validationError}</p>
+              )}
             </div>
 
             {/* Balance row */}
@@ -215,60 +224,26 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted">Destination</span>
-                <span className="text-sm text-[#D4A853] font-medium">ArcVault Treasury</span>
+                <span className="text-sm text-[#D4A853] font-medium">USYC Yield Vault</span>
               </div>
             </div>
 
-            {/* Two-step indicator */}
-            {step !== 'input' && (
-              <div className="flex items-center gap-3 p-3 bg-[#C9A96215] border border-[#C9A96230] rounded-lg">
-                <div className="flex items-center gap-2 text-sm">
-                  <div
-                    className={
-                      step === 'approving'
-                        ? 'w-6 h-6 rounded-full border-2 border-[#C9A962] flex items-center justify-center animate-pulse'
-                        : 'w-6 h-6 rounded-full bg-success flex items-center justify-center'
-                    }
-                  >
-                    {step === 'depositing' && <Check className="w-3.5 h-3.5 text-white" />}
-                    {step === 'approving' && <span className="text-xs text-[#C9A962] font-medium">1</span>}
-                  </div>
-                  <span className="text-[#A09D95]">Approve</span>
-                </div>
-                <div className="flex-1 h-px bg-[#383430]" />
-                <div className="flex items-center gap-2 text-sm">
-                  <div
-                    className={
-                      step === 'depositing'
-                        ? 'w-6 h-6 rounded-full border-2 border-[#C9A962] flex items-center justify-center animate-pulse'
-                        : 'w-6 h-6 rounded-full border-2 border-[#383430] flex items-center justify-center'
-                    }
-                  >
-                    <span className="text-xs text-[#A09D95] font-medium">2</span>
-                  </div>
-                  <span className="text-[#A09D95]">Deposit</span>
-                </div>
-              </div>
-            )}
-
-            {/* Deposit button */}
+            {/* Sweep button */}
             <Button
               variant="primary"
               className="w-full !h-[52px] !text-base !font-semibold"
-              onClick={handleDeposit}
-              disabled={!isConnected || !isValidAmount || step === 'approving' || step === 'depositing'}
-              loading={step === 'approving' || step === 'depositing'}
+              onClick={handleSweep}
+              disabled={!isConnected || !isValidAmount || step === 'sweeping'}
+              loading={step === 'sweeping'}
             >
               {!isConnected ? (
                 'Connect Wallet'
-              ) : step === 'approving' ? (
-                'Approving USDC...'
-              ) : step === 'depositing' ? (
-                'Depositing...'
+              ) : step === 'sweeping' ? (
+                'Sweeping...'
               ) : (
                 <span className="inline-flex items-center gap-2">
-                  <ArrowDownToLine className="w-4 h-4" />
-                  Deposit ${displayAmount} USDC
+                  <ArrowRightLeft className="w-4 h-4" />
+                  Sweep ${displayAmount} to USYC
                 </span>
               )}
             </Button>
@@ -288,9 +263,9 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
               <Check className="w-6 h-6 text-success" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-lg font-semibold text-foreground">Deposit Confirmed</p>
+              <p className="text-lg font-semibold text-foreground">Sweep Confirmed</p>
               <p className="text-sm text-muted">
-                {formatCurrency(numericAmount, { decimals: 2 })} USDC deposited successfully
+                {formatCurrency(numericAmount, { decimals: 2 })} USDC swept to USYC successfully
               </p>
             </div>
             {txHash && (

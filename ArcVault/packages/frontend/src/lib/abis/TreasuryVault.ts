@@ -9,6 +9,8 @@ export const TreasuryVaultABI = [
   { type: 'function', name: 'setLiquidityThreshold', inputs: [{ name: 'newThreshold', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'TREASURY_MANAGER_ROLE', inputs: [], outputs: [{ name: '', type: 'bytes32' }], stateMutability: 'view' },
   { type: 'function', name: 'CFO_ROLE', inputs: [], outputs: [{ name: '', type: 'bytes32' }], stateMutability: 'view' },
+  { type: 'function', name: 'sweepToUSYC', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+  { type: 'function', name: 'redeemFromUSYC', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   // Events
   { type: 'event', name: 'Deposited', inputs: [{ name: 'amount', type: 'uint256', indexed: false }] },
   { type: 'event', name: 'Withdrawn', inputs: [{ name: 'amount', type: 'uint256', indexed: false }] },
