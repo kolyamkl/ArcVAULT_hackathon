@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// Transaction — universal ledger for all on-chain activity
+// ─────────────────────────────────────────────
+model Transaction {
+  id            String   @id @default(cuid())
+  type          String   // DEPOSIT | WITHDRAW | SWEEP | REDEEM | PAYOUT | FX_SWAP | BUDGET_SPEND
+  txHash        String?  @unique
+  fromAddress   String?
+  toAddress     String?
+  amount        Decimal
+  currency      String   // USDC | EURC | USYC
+  status        String   // PENDING | PROCESSING | COMPLETED | FAILED
+  metadata      Json?    // Arbitrary JSON for type-specific data (e.g., payout reference, FX rate)
+  chainId       Int      // Chain ID (e.g., 1 for Ethereum mainnet, 421614 for Arbitrum Sepolia)
+  blockNumber   Int?     // Populated after on-chain confirmation
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Payout — tracks individual payment lifecycle
+// ─────────────────────────────────────────────
+model Payout {
+  id              String   @id @default(cuid())
+  onChainId       Int      @unique         // Maps to PayoutRouter's payoutCounter
+  recipient       String                    // Wallet address of recipient
+  amount          Decimal                   // Amount in source currency
+  sourceCurrency  String                    // Source token symbol (e.g., USDC)
+  targetCurrency  String                    // Target token symbol (e.g., EURC, USDC)
+  reference       String?                   // Human-readable ref (invoice #, PO #)
+  status          String                    // PENDING | PROCESSING | CONVERTING | SETTLING | COMPLETED | FAILED
+  cpnPaymentId    String?                   // Circle Payments Network ID (if applicable)
+  txHash          String?                   // On-chain transaction hash
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([recipient])
+}
+
+// ─────────────────────────────────────────────
+// FXQuote — foreign exchange quote lifecycle
+// ─────────────────────────────────────────────
+model FXQuote {
+  id            String   @id @default(cuid())
+  fromCurrency  String                      // Source token symbol
+  toCurrency    String                      // Destination token symbol
+  fromAmount    Decimal                     // Amount of source token
+  toAmount      Decimal                     // Amount of destination token
+  rate          Decimal                     // Exchange rate (fromCurrency -> toCurrency)
+  spread        Decimal                     // Spread in basis points
+  expiresAt     DateTime                    // Quote expiry timestamp
+  status        String                      // PENDING | ACCEPTED | EXPIRED | EXECUTED
+  txHash        String?                     // On-chain tx hash if executed
+  createdAt     DateTime @default(now())
+
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Pipeline — saved automation workflow (node/edge graph)
+// ─────────────────────────────────────────────
+model Pipeline {
+  id          String               @id @default(cuid())
+  name        String                        // Human-readable name (e.g., "Monthly Payroll")
+  nodes       Json                          // Array of React Flow nodes
+  edges       Json                          // Array of React Flow edges
+  metadata    Json?                         // Optional config (schedule, thresholds, etc.)
+  ownerWallet String                        // Wallet address of the pipeline creator
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  executions  PipelineExecution[]
+
+  @@index([ownerWallet])
+}
+
+// ─────────────────────────────────────────────
+// PipelineExecution — single run of a pipeline
+// ─────────────────────────────────────────────
+model PipelineExecution {
+  id          String    @id @default(cuid())
+  pipelineId  String
+  pipeline    Pipeline  @relation(fields: [pipelineId], references: [id])
+  status      String    // PENDING | RUNNING | COMPLETED | PARTIAL_FAILURE | FAILED
+  totalCost   Decimal                       // Total USDC spent in this execution
+  fxCost      Decimal   @default(0)         // FX conversion cost component
+  results     Json                          // Per-node execution results
+  triggeredBy String                        // Wallet address or "CRON" / "MANUAL"
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([pipelineId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Budget — off-chain mirror of on-chain BudgetManager state
+// ─────────────────────────────────────────────
+model Budget {
+  id              String   @id @default(cuid())
+  onChainId       Int      @unique         // Maps to BudgetManager's budgetCounter
+  name            String                    // Department/budget name
+  departmentHead  String                    // Wallet address of the department head
+  totalAllocation Decimal                   // Total USDC allocated
+  spent           Decimal  @default(0)      // Cumulative USDC spent
+  periodStart     DateTime                  // Budget period start
+  periodEnd       DateTime                  // Budget period end
+  active          Boolean  @default(true)   // Whether the budget is active
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([active])
+}
+
+// ─────────────────────────────────────────────
+// ApprovalRequest — tracks multi-sig approval gates in pipelines
+// ─────────────────────────────────────────────
+model ApprovalRequest {
+  id              String   @id @default(cuid())
+  executionId     String
+  nodeId          String                        // Pipeline node ID requiring approval
+  approverAddress String                        // Wallet address of the approver
+  status          String   @default("PENDING")  // PENDING | APPROVED | REJECTED
+  signature       String?                       // Optional on-chain signature
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([executionId, nodeId, approverAddress])
+  @@index([executionId, nodeId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// DelaySchedule — tracks timed delays in pipeline execution
+// ─────────────────────────────────────────────
+model DelaySchedule {
+  id          String   @id @default(cuid())
+  executionId String
+  nodeId      String                            // Pipeline node ID with delay
+  resumeAt    DateTime                          // When to resume execution
+  status      String   @default("WAITING")      // WAITING | RESUMED | CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([executionId, nodeId])
+  @@index([status])
+  @@index([resumeAt])
+}
+
+// ─────────────────────────────────────────────
+// VaultSnapshot — periodic treasury state capture for charting
+// ─────────────────────────────────────────────
+model VaultSnapshot {
+  id              String   @id @default(cuid())
+  liquidUSDC      Decimal                   // USDC held in TreasuryVault (liquid)
+  usycBalance     Decimal                   // USYC token balance
+  totalValue      Decimal                   // liquidUSDC + (usycBalance * exchangeRate) in USDC terms
+  yieldAccrued    Decimal                   // Cumulative yield earned in USDC
+  apy             Decimal                   // Current annualized yield percentage
+  timestamp       DateTime @default(now())
+
+  @@index([timestamp])
+}
