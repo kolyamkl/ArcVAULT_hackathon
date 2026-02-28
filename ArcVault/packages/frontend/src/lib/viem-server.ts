@@ -18,9 +18,12 @@ export function getPublicClient() {
  * Needed for EIP-712 signing in StableFX and other server-side signing flows.
  */
 export function getDeployerAccount() {
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
   if (!privateKey) {
     throw new Error('DEPLOYER_PRIVATE_KEY environment variable is not set');
+  }
+  if (!/^0x[0-9a-fA-F]{64}$/.test(privateKey)) {
+    throw new Error('DEPLOYER_PRIVATE_KEY must be a 0x-prefixed 32-byte hex string');
   }
   return privateKeyToAccount(privateKey as `0x${string}`);
 }

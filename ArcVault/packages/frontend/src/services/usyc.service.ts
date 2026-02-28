@@ -1,3 +1,4 @@
+import { getAddress } from "viem";
 import type { IUSYCAdapter, TxResult, YieldDataPoint } from "@/types/integrations";
 
 export class RealUSYCAdapter implements IUSYCAdapter {
@@ -5,8 +6,8 @@ export class RealUSYCAdapter implements IUSYCAdapter {
   private usycAddress: `0x${string}`;
 
   constructor() {
-    this.vaultAddress = process.env.NEXT_PUBLIC_TREASURY_VAULT_ADDRESS as `0x${string}`;
-    this.usycAddress = process.env.NEXT_PUBLIC_USYC_ADDRESS as `0x${string}`;
+    this.vaultAddress = getAddress((process.env.NEXT_PUBLIC_TREASURY_VAULT_ADDRESS ?? '0x0').trim());
+    this.usycAddress = getAddress((process.env.NEXT_PUBLIC_USYC_ADDRESS ?? '0x0').trim());
   }
 
   async deposit(amount: bigint): Promise<TxResult> {
