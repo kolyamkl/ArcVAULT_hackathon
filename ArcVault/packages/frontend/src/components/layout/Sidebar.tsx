@@ -68,7 +68,7 @@ export function Sidebar({ className, mobileOpen = false, onMobileClose }: Sideba
       <div className="flex items-center justify-between px-4 pt-0 pb-7 flex-shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-[34px] h-[34px] rounded-[10px] bg-[#C9A96230] border border-[#C9A96240] backdrop-blur-[12px] flex items-center justify-center">
-            <Landmark className="h-4 w-4 text-[#121210]" />
+            <Landmark className="h-4 w-4 text-[#C9A962]" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-foreground leading-tight">ArcVault</span>
