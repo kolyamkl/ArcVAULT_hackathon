@@ -17,9 +17,11 @@ export async function GET(req: NextRequest) {
     }
 
     const raw = { from: rawFrom, to: rawTo, amount: searchParams.get("amount") ?? "" };
+    console.log("[GET /api/fx/quote] Incoming params:", raw);
 
     const parsed = fxQuoteQuerySchema.safeParse(raw);
     if (!parsed.success) {
+      console.log("[GET /api/fx/quote] Validation failed:", parsed.error.flatten());
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }
@@ -27,14 +29,20 @@ export async function GET(req: NextRequest) {
     }
 
     const { from, to, amount } = parsed.data;
+    const amountBase = BigInt(Math.round(parseFloat(amount) * 1e6));
+    console.log(`[GET /api/fx/quote] Requesting quote: ${from} -> ${to}, amount=${amount} (base=${amountBase})`);
 
     // Get live quote from adapter
     const adapter = getStableFXAdapter();
-    const quote = await adapter.getQuote(
-      from,
-      to,
-      BigInt(Math.round(parseFloat(amount) * 1e6))
-    );
+    console.log(`[GET /api/fx/quote] Adapter: ${adapter.constructor.name}`);
+    const quote = await adapter.getQuote(from, to, amountBase);
+    console.log("[GET /api/fx/quote] Quote received:", {
+      quoteId: quote.quoteId,
+      rate: quote.rate,
+      fromAmount: quote.fromAmount,
+      toAmount: quote.toAmount,
+      spread: quote.spread,
+    });
 
     const quotePayload = {
       id: quote.quoteId,
@@ -47,6 +55,8 @@ export async function GET(req: NextRequest) {
       expiresAt: quote.expiresAt.toISOString(),
       status: "PENDING",
     };
+
+    console.log("[GET /api/fx/quote] Quote payload ready:", quotePayload);
 
     // Persist the quote in the database for audit trail
     try {
@@ -63,6 +73,7 @@ export async function GET(req: NextRequest) {
           status: "PENDING",
         },
       });
+      console.log("[GET /api/fx/quote] Quote persisted to DB, id:", fxQuote.id);
       return NextResponse.json(serializeDecimals(fxQuote));
     } catch (dbError) {
       console.warn("[GET /api/fx/quote] DB write failed, returning quote without persistence:", dbError);

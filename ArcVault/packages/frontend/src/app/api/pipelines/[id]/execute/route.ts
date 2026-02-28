@@ -10,6 +10,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const { id } = await params;
     const body = await req.json();
+    console.log(`[POST /api/pipelines/${id}/execute] Trigger received, body:`, body);
     const parsed = executePipelineSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
+    console.log(`[POST /api/pipelines/${id}/execute] Pipeline found: "${pipeline.name}", nodes: ${(pipeline.nodes as unknown[])?.length}`);
+
     // Create execution record with RUNNING status and empty results
     const execution = await prisma.pipelineExecution.create({
       data: {
@@ -42,6 +45,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         startedAt: new Date(),
       },
     });
+
+    console.log(`[POST /api/pipelines/${id}/execute] Execution created: ${execution.id}, status: ${execution.status}`);
 
     // Fire-and-forget: trigger the background processor
     const origin = req.nextUrl.origin;

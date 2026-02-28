@@ -50,16 +50,25 @@ export function useOnChainSwap() {
       if (!fromToken) throw new Error(`No on-chain token address for ${fromCurrency}`);
       if (!toToken) throw new Error(`No on-chain token address for ${toCurrency}`);
 
+      console.log('[useOnChainSwap] Starting on-chain swap:', {
+        fromCurrency, toCurrency, amount: amount.toString(),
+        fromToken, toToken, account, stableFX: STABLEFX_ADDRESS,
+      });
+
       // Step 1: Approve StableFX contract to spend the from-token
+      console.log('[useOnChainSwap] Step 1: Approving StableFX to spend', fromCurrency);
       const approveHash = await writeContractAsync({
         address: fromToken,
         abi: erc20Abi,
         functionName: 'approve',
         args: [STABLEFX_ADDRESS, amount],
       });
+      console.log('[useOnChainSwap] Step 1: Approve tx sent:', approveHash);
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      console.log('[useOnChainSwap] Step 1: Approve confirmed');
 
       // Step 2: Simulate requestQuote to get the quoteId, then execute it
+      console.log('[useOnChainSwap] Step 2: Simulating requestQuote...');
       const { result } = await publicClient.simulateContract({
         address: STABLEFX_ADDRESS,
         abi: StableFXABI,
@@ -68,6 +77,7 @@ export function useOnChainSwap() {
         account,
       });
       const [quoteId, outputAmount] = result;
+      console.log('[useOnChainSwap] Step 2: Simulated quoteId:', quoteId.toString(), 'outputAmount:', outputAmount.toString());
 
       const quoteHash = await writeContractAsync({
         address: STABLEFX_ADDRESS,
@@ -75,17 +85,27 @@ export function useOnChainSwap() {
         functionName: 'requestQuote',
         args: [fromToken, toToken, amount],
       });
+      console.log('[useOnChainSwap] Step 2: requestQuote tx sent:', quoteHash);
       await publicClient.waitForTransactionReceipt({ hash: quoteHash });
+      console.log('[useOnChainSwap] Step 2: requestQuote confirmed');
 
       // Step 3: Execute the swap on-chain (transfers tokens)
+      console.log('[useOnChainSwap] Step 3: Executing swap with quoteId:', quoteId.toString());
       const swapHash = await writeContractAsync({
         address: STABLEFX_ADDRESS,
         abi: StableFXABI,
         functionName: 'executeSwap',
         args: [quoteId],
       });
+      console.log('[useOnChainSwap] Step 3: executeSwap tx sent:', swapHash);
       const swapReceipt = await publicClient.waitForTransactionReceipt({
         hash: swapHash,
+      });
+      console.log('[useOnChainSwap] Step 3: Swap confirmed! txHash:', swapReceipt.transactionHash);
+
+      console.log('[useOnChainSwap] Swap complete:', {
+        txHash: swapReceipt.transactionHash,
+        outputAmount: outputAmount.toString(),
       });
 
       return {
