@@ -28,9 +28,6 @@ const connectors = connectorsForWallets(
   {
     projectId,
     appName: 'ArcVault',
-    walletConnectParameters: {
-      isNewChainsStale: false,
-    },
   },
 );
 

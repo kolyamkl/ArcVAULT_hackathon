@@ -13,6 +13,7 @@ interface LiquidityAllocationProps {
   totalBalance?: number;
   onUpdateThreshold?: (value: number) => void;
   onRebalance?: (usycAmount: number, liquidAmount: number) => void;
+  isUpdating?: boolean;
 }
 
 export function LiquidityAllocation({
@@ -22,6 +23,7 @@ export function LiquidityAllocation({
   totalBalance = 1_000_000,
   onUpdateThreshold,
   onRebalance,
+  isUpdating = false,
 }: LiquidityAllocationProps) {
   const [thresholdMode, setThresholdMode] = useState<ThresholdMode>('percent');
   const [thresholdInput, setThresholdInput] = useState(String(threshold));
@@ -138,6 +140,7 @@ export function LiquidityAllocation({
             </div>
           )}
           <button
+            disabled={isUpdating}
             onClick={() => {
               if (thresholdMode === 'percent') {
                 const v = Number(thresholdInput);
@@ -150,9 +153,12 @@ export function LiquidityAllocation({
                 onUpdateThreshold?.(Math.round(pct * 100) / 100);
               }
             }}
-            className="px-4 py-2 rounded-lg bg-gradient-to-br from-[#C9A962] to-[#D4A853] text-[#0A0A0A] text-sm font-semibold hover:brightness-110 transition-all"
+            className={clsx(
+              'px-4 py-2 rounded-lg bg-gradient-to-br from-[#C9A962] to-[#D4A853] text-[#0A0A0A] text-sm font-semibold transition-all',
+              isUpdating ? 'opacity-60 cursor-not-allowed' : 'hover:brightness-110',
+            )}
           >
-            Update Threshold
+            {isUpdating ? 'Updating...' : 'Update Threshold'}
           </button>
 
           <button

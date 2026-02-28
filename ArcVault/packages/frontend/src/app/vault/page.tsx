@@ -19,6 +19,8 @@ export default function VaultPage() {
   const [sweepOpen, setSweepOpen] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
 
+  const [localThresholdPercent, setLocalThresholdPercent] = useState<number | null>(null);
+
   const { liquidUSDC, usycBalance, totalValue, threshold } = useVaultBalances();
   const setThreshold = useSetThreshold();
 
@@ -35,10 +37,18 @@ export default function VaultPage() {
   const displayTotalBalance = totalVal > 0 ? totalVal : 1_000_000;
 
   const handleUpdateThreshold = async (percentValue: number) => {
-    // Convert percentage to absolute USDC amount (6 decimals)
-    const absoluteAmount = (percentValue / 100) * displayTotalBalance;
-    const thresholdBigInt = parseUnits(String(absoluteAmount), 6);
-    await setThreshold.mutateAsync({ threshold: thresholdBigInt });
+    // Immediately update the UI so the user sees feedback
+    setLocalThresholdPercent(percentValue);
+
+    try {
+      // Convert percentage to absolute USDC amount (6 decimals)
+      const absoluteAmount = (percentValue / 100) * displayTotalBalance;
+      const thresholdBigInt = parseUnits(String(absoluteAmount), 6);
+      await setThreshold.mutateAsync({ threshold: thresholdBigInt });
+    } catch {
+      // Revert optimistic update on failure
+      setLocalThresholdPercent(null);
+    }
   };
 
   return (
@@ -53,10 +63,11 @@ export default function VaultPage() {
       <LiquidityAllocation
         usycPercent={usycPercent}
         liquidPercent={liquidPercent}
-        threshold={thresholdPercent}
+        threshold={localThresholdPercent ?? thresholdPercent}
         totalBalance={displayTotalBalance}
         onUpdateThreshold={handleUpdateThreshold}
         onRebalance={() => alert('Rebalance coming soon')}
+        isUpdating={setThreshold.isPending}
       />
       <TransactionHistoryTable />
 

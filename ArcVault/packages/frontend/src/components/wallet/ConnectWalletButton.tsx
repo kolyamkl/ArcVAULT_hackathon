@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Wallet, LogOut, AlertTriangle } from 'lucide-react';
@@ -21,11 +21,9 @@ export function ConnectWalletButton() {
 
   const isWrongChain = isConnected && chain?.id !== arcTestnet.id;
 
-  // Clear stale WC sessions when the modal opens so a fresh QR is always
-  // generated. Without this, the connector reuses a cached session and never
-  // emits display_uri, so the QR code never appears.
-  useEffect(() => {
-    if (!connectModalOpen) return;
+  // Clear stale WC sessions synchronously before opening the modal so the
+  // connector initializes fresh and always emits display_uri for the QR code.
+  const clearWcCache = useCallback(() => {
     try {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -36,7 +34,7 @@ export function ConnectWalletButton() {
       }
       keysToRemove.forEach((k) => localStorage.removeItem(k));
     } catch {}
-  }, [connectModalOpen]);
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -106,9 +104,11 @@ export function ConnectWalletButton() {
   // Disconnected state
   return (
     <button
-      onClick={() => openConnectModal?.()}
-      disabled={connectModalOpen}
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#C9A962] text-[#191817] text-sm font-semibold hover:bg-[#d4b86e] disabled:opacity-50 transition-colors cursor-pointer"
+      onClick={() => {
+        clearWcCache();
+        openConnectModal?.();
+      }}
+      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#C9A962] text-[#191817] text-sm font-semibold hover:bg-[#d4b86e] transition-colors cursor-pointer"
     >
       <Wallet className="h-4 w-4" />
       <span>{connectModalOpen ? 'Connecting...' : 'Connect Wallet'}</span>
