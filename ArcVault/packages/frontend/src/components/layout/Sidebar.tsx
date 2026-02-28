@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard,
-  BarChart3,
+  Shield,
   ArrowLeftRight,
   Workflow,
   X,
@@ -16,7 +16,7 @@ import {
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { label: 'Pipeline Analysis', href: '/vault', icon: BarChart3 },
+  { label: 'Treasury Vault', href: '/vault', icon: Shield },
   { label: 'FX Conversion', href: '/fx', icon: ArrowLeftRight },
   { label: 'Pipeline Builder', href: '/pipeline', icon: Workflow },
 ];
@@ -59,16 +59,16 @@ export function Sidebar({ className, mobileOpen = false, onMobileClose }: Sideba
     <div
       className={clsx(
         'flex flex-col w-full h-full',
-        'bg-[#161614e6] backdrop-blur-md',
+        'bg-[#16161480] backdrop-blur-[40px]',
         'border-r border-[#C9A96212]',
         className
       )}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-[#C9A96212] flex-shrink-0">
+      <div className="flex items-center justify-between px-4 pt-0 pb-7 flex-shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D4A853] to-[#B08D3E] flex items-center justify-center">
-            <Landmark className="h-4 w-4 text-[#0A0A0A]" />
+          <div className="w-[34px] h-[34px] rounded-[10px] bg-[#C9A96230] border border-[#C9A96240] backdrop-blur-[12px] flex items-center justify-center">
+            <Landmark className="h-4 w-4 text-[#121210]" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-foreground leading-tight">ArcVault</span>
@@ -91,7 +91,7 @@ export function Sidebar({ className, mobileOpen = false, onMobileClose }: Sideba
         <p className="text-[10px] font-semibold tracking-[2px] text-muted px-3 mb-3">
           NAVIGATION
         </p>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
@@ -102,13 +102,13 @@ export function Sidebar({ className, mobileOpen = false, onMobileClose }: Sideba
                 href={item.href}
                 onClick={() => onMobileClose?.()}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                  'flex items-center gap-3 px-3.5 py-[11px] rounded-[10px] text-sm font-medium transition-all duration-150',
                   active
-                    ? 'bg-[#C9A96218] border border-[#C9A96225] text-[#C9A962]'
-                    : 'text-[#7A7770] hover:text-foreground hover:bg-[#C9A96210]'
+                    ? 'bg-[#C9A96218] border border-[#C9A96225] text-foreground backdrop-blur-[12px]'
+                    : 'text-[#8A8780] hover:text-foreground hover:bg-[#C9A96210]'
                 )}
               >
-                <Icon className={clsx('h-5 w-5 flex-shrink-0', active && 'text-[#C9A962]')} />
+                <Icon className={clsx('h-5 w-5 flex-shrink-0', active ? 'text-[#D4A853]' : 'text-[#8A8780]')} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -117,19 +117,20 @@ export function Sidebar({ className, mobileOpen = false, onMobileClose }: Sideba
       </nav>
 
       {/* Bottom section */}
-      <div className="border-t border-[#C9A96212] flex-shrink-0">
+      <div className="px-3 pb-3 flex-shrink-0">
+        <div className="h-px w-full bg-[var(--color-card-border)]" />
         {/* Settings */}
         <Link
           href="#"
-          className="flex items-center gap-3 px-6 py-3 text-sm text-[#7A7770] hover:text-foreground hover:bg-[#C9A96210] transition-colors"
+          className="flex items-center gap-3 px-3.5 py-2 rounded-[10px] text-sm text-[#8A8780] hover:text-foreground hover:bg-[#C9A96210] transition-colors mt-2"
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
           <span>Settings</span>
         </Link>
 
         {/* User */}
-        <div className="flex items-center gap-3 px-6 py-3 border-t border-[#C9A96212]">
-          <div className="w-8 h-8 rounded-full bg-[#C9A96220] flex items-center justify-center text-xs font-medium text-[#C9A962]">
+        <div className="flex items-center gap-3 px-3.5 py-2 mt-1">
+          <div className="w-8 h-8 rounded-full bg-[#D4A85320] flex items-center justify-center text-xs font-medium text-[#D4A853]">
             0x
           </div>
           <div className="flex flex-col min-w-0">

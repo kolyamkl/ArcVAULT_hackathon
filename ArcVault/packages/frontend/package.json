@@ -31,7 +31,7 @@
     "tailwind-merge": "^2.3.0",
     "class-variance-authority": "^0.7.0",
     "lucide-react": "^0.378.0",
-    "qrcode.react": "^4.2.0"
+    "@rainbow-me/rainbowkit": "^2.2.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

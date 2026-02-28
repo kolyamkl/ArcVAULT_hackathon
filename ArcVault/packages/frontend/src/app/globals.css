@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode */
+    --color-background: #F5F3EF;
+    --color-surface: #FFFFFF;
+    --color-card-border: rgba(0, 0, 0, 0.03);
+    --color-primary: #D4A853;
+    --color-secondary: #B08D3E;
+    --color-success: #7EC97A;
+    --color-warning: #E0A84C;
+    --color-error: #D46B6B;
+    --color-foreground: #1C1B18;
+    --color-muted: #7A7770;
+    --color-gold: #C9A962;
+  }
+
+  .dark {
+    --color-background: #191817;
+    --color-surface: #232120;
+    --color-card-border: #383430;
+    --color-primary: #D4A853;
+    --color-secondary: #B08D3E;
+    --color-success: #7EC97A;
+    --color-warning: #E0A84C;
+    --color-error: #D46B6B;
+    --color-foreground: #F0EDE6;
+    --color-muted: #A09D95;
+    --color-gold: #C9A962;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Scrollbar styling for dark mode */
+  .dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(201, 169, 98, 0.2);
+    border-radius: 4px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(201, 169, 98, 0.35);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   React Flow handle interaction UX
+   --------------------------------------------------------------------------- */
+
+/* Base handle transition + persistent subtle glow */
+.react-flow__handle {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+  box-shadow: 0 0 6px 1px currentColor !important;
+}
+
+/* Enlarge handles on hover for easier grabbing */
+.react-flow__handle:hover {
+  transform: scale(1.4) !important;
+  box-shadow: 0 0 12px 3px currentColor !important;
+  z-index: 10 !important;
+}
+
+/* When a connection is being dragged, pulse all valid target handles */
+.react-flow__handle.connectingto,
+.react-flow__handle-right.connecting,
+.react-flow__handle-left.connecting {
+  animation: none;
+}
+
+/* Glow on the handle being dragged from */
+.connecting .react-flow__handle {
+  opacity: 0.4;
+}
+
+/* Valid target handles glow and pulse during connection */
+.react-flow__handle.react-flow__handle-left.connectable {
+  /* handled by default reactflow */
+}
+
+/* Connection line while dragging */
+.react-flow__connection-path {
+  stroke: #C9A962 !important;
+  stroke-width: 2.5 !important;
+  stroke-dasharray: 6 3 !important;
+  animation: dash-flow 0.5s linear infinite !important;
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+
+/* Smooth step edges for cleaner routing */
+.react-flow__edge-path {
+  transition: stroke 0.3s ease, stroke-width 0.2s ease;
+}
+
+/* Edge hover - thicken for visibility */
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3 !important;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+/* Animate edge on hover for feedback */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Electric edge animations
+   --------------------------------------------------------------------------- */
+
+/* Subtle breathing pulse on the glow layer */
+.electric-edge-glow {
+  animation: electric-breathe 3s ease-in-out infinite;
+}
+
+@keyframes electric-breathe {
+  0%, 100% { stroke-opacity: 0.06; }
+  50% { stroke-opacity: 0.14; }
+}
+
+/* Core wire flicker — simulates electric current intensity variation */
+.electric-edge-core {
+  animation: electric-flicker 2s ease-in-out infinite;
+}
+
+@keyframes electric-flicker {
+  0%, 100% { stroke-opacity: 0.6; }
+  25% { stroke-opacity: 0.9; }
+  50% { stroke-opacity: 0.5; }
+  75% { stroke-opacity: 0.85; }
+}
+
+/* Brighten electric edges on hover */
+.react-flow__edge:hover .electric-edge-glow {
+  stroke-opacity: 0.25 !important;
+  animation: none;
+}
+
+.react-flow__edge:hover .electric-edge-core {
+  stroke-opacity: 1 !important;
+  animation: none;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   AlertCircle,
   RefreshCw,
@@ -8,39 +8,29 @@ import {
   TrendingUp,
   DollarSign,
   Coins,
-  ArrowDownLeft,
-  ArrowUpRight,
+  Clock,
 } from 'lucide-react';
-import { useAccount } from 'wagmi';
-import { parseUnits } from 'viem';
-import dynamic from 'next/dynamic';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useVaultBalances } from '@/hooks/useVaultBalances';
-import { useSetThreshold } from '@/hooks/useSetThreshold';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card } from '@/components/shared/Card';
 import { Button } from '@/components/shared/Button';
 import { YieldChart } from '@/components/vault/YieldChart';
 import { AllocationPie } from '@/components/vault/AllocationPie';
-import { ThresholdSlider } from '@/components/vault/ThresholdSlider';
-import { ActivityFeed } from '@/components/shared/ActivityFeed';
+import {
+  SparklineChart,
+  MiniBarChart,
+  GaugeChart,
+  ProgressBar,
+  PendingDots,
+} from '@/components/shared/MiniCharts';
 import { formatCurrency } from '@/lib/format';
-
-const DepositModal = dynamic(
-  () => import('@/components/vault/DepositModal').then((m) => m.DepositModal),
-  { ssr: false },
-);
-const WithdrawModal = dynamic(
-  () => import('@/components/vault/WithdrawModal').then((m) => m.WithdrawModal),
-  { ssr: false },
-);
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
-  const { isConnected } = useAccount();
   const {
     data: stats,
     isLoading,
@@ -49,10 +39,6 @@ export default function DashboardPage() {
   } = useDashboardStats();
 
   const vaultBalances = useVaultBalances();
-  const setThresholdMutation = useSetThreshold();
-
-  const [depositOpen, setDepositOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const handleRetry = useCallback(() => {
     refetch();
@@ -71,44 +57,21 @@ export default function DashboardPage() {
 
   const totalAUM = liquidUSDC + usycPosition;
   const yieldAccrued = Number(vaultBalances.yieldAccrued) / 1e6;
-  const totalValue = Number(vaultBalances.totalValue) / 1e6;
-  const currentThreshold = Number(vaultBalances.threshold) / 1e6;
-  const balancesLoading = vaultBalances.isLoading;
 
-  // Handle threshold update
-  const handleUpdateThreshold = useCallback(
-    (newThreshold: number) => {
-      const thresholdBigInt = parseUnits(newThreshold.toFixed(6), 6);
-      setThresholdMutation.mutate({ threshold: thresholdBigInt });
-    },
-    [setThresholdMutation],
-  );
-
-  // Build activity entries from the API transactions
-  const activities = (stats?.recentTransactions ?? []).map((tx) => ({
-    id: tx.id,
-    type: tx.type === 'WITHDRAWAL' ? 'WITHDRAW' : tx.type === 'YIELD' ? 'SWEEP' : tx.type,
-    description: tx.description ?? `${tx.type} ${formatCurrency(tx.amount)}`,
-    amount: tx.amount,
-    currency: tx.currency ?? 'USDC',
-    timestamp: tx.createdAt,
-    txHash: tx.txHash,
-  })) as Array<{
-    id: string;
-    type: 'DEPOSIT' | 'SWEEP' | 'PAYOUT' | 'FX_SWAP' | 'REDEEM' | 'WITHDRAW';
-    description: string;
-    amount: number;
-    currency: string;
-    timestamp: string;
-    txHash?: string;
-  }>;
-
-  // Build yield chart data from dashboard stats
+  // Static sample data until the API provides a yield time-series
   const yieldHistory: Array<{
     date: string;
     cumulativeYield: number;
     dailyYield: number;
-  }> = [];
+  }> = [
+    { date: '2026-02-01', cumulativeYield: 320, dailyYield: 32 },
+    { date: '2026-02-05', cumulativeYield: 480, dailyYield: 38 },
+    { date: '2026-02-09', cumulativeYield: 610, dailyYield: 28 },
+    { date: '2026-02-13', cumulativeYield: 790, dailyYield: 45 },
+    { date: '2026-02-17', cumulativeYield: 940, dailyYield: 36 },
+    { date: '2026-02-21', cumulativeYield: 1120, dailyYield: 42 },
+    { date: '2026-02-25', cumulativeYield: 1280, dailyYield: 39 },
+  ];
 
   // Error state
   if (error && !stats) {
@@ -138,36 +101,61 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Row 1 -- Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="-m-6 px-10 py-8 space-y-7 animate-fade-in">
+      {/* Performance Row */}
+      <p className="text-[10px] font-semibold tracking-[2px] text-muted">PERFORMANCE</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           label="Total AUM"
           value={formatCurrency(totalAUM)}
           change={stats?.balanceChange}
           iconBadge={<Landmark className="h-5 w-5" />}
+          miniChart={<SparklineChart />}
         />
+        <StatCard
+          label="Yield Earned"
+          value={formatCurrency(yieldAccrued)}
+          change={12.5}
+          iconBadge={<TrendingUp className="h-5 w-5" />}
+          miniChart={<MiniBarChart />}
+        />
+        <StatCard
+          label="Current APY"
+          value="4.85%"
+          change={0.12}
+          changeLabel="vs last week"
+          iconBadge={<TrendingUp className="h-5 w-5" />}
+          miniChart={<GaugeChart />}
+        />
+      </div>
+
+      {/* Positions Row */}
+      <p className="text-[10px] font-semibold tracking-[2px] text-muted">POSITIONS</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           label="Liquid USDC"
           value={formatCurrency(liquidUSDC)}
-          iconBadge={<DollarSign className="h-5 w-5" />}
+          valueClassName="text-[#7EC97A]"
           subtitle="Available for payouts"
+          iconBadge={<DollarSign className="h-5 w-5" />}
+          miniChart={<ProgressBar />}
         />
         <StatCard
           label="USYC Position"
           value={formatCurrency(usycPosition)}
-          iconBadge={<Coins className="h-5 w-5" />}
           subtitle="Earning 4.85% APY"
+          iconBadge={<Coins className="h-5 w-5" />}
         />
         <StatCard
-          label="Accrued Yield"
-          value={formatCurrency(yieldAccrued)}
-          iconBadge={<TrendingUp className="h-5 w-5" />}
-          subtitle="Since inception"
+          label="Pending Payouts"
+          value={formatCurrency(0)}
+          subtitle="Awaiting execution"
+          iconBadge={<Clock className="h-5 w-5" />}
+          miniChart={<PendingDots />}
         />
       </div>
 
-      {/* Row 2 -- Charts */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-3">
           <h3 className="font-display text-2xl font-medium text-foreground mb-4">Yield Over Time</h3>
@@ -184,54 +172,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3 -- Threshold + Actions */}
-      <Card className="bg-transparent">
-        <ThresholdSlider
-          currentThreshold={currentThreshold}
-          liquidBalance={liquidUSDC}
-          usycBalance={usycPosition}
-          totalValue={totalValue > 0 ? totalValue : liquidUSDC + usycPosition}
-          onUpdateThreshold={handleUpdateThreshold}
-          isUpdating={setThresholdMutation.isPending}
-          canUpdate={isConnected}
-          loading={balancesLoading}
-        />
-      </Card>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="primary"
-          onClick={() => setDepositOpen(true)}
-          disabled={!isConnected}
-        >
-          <ArrowDownLeft className="w-4 h-4 mr-2" />
-          Deposit USDC
-        </Button>
-
-        <Button
-          variant="secondary"
-          onClick={() => setWithdrawOpen(true)}
-          disabled={!isConnected}
-        >
-          <ArrowUpRight className="w-4 h-4 mr-2" />
-          Withdraw USDC
-        </Button>
-
-        {!isConnected && (
-          <p className="text-xs text-[#A09D95] self-center">
-            Connect wallet to perform vault actions
-          </p>
-        )}
-      </div>
-
-      {/* Row 4 -- Recent Activity */}
-      <Card>
-        <ActivityFeed activities={activities} loading={isLoading} />
-      </Card>
-
-      {/* Modals */}
-      <DepositModal isOpen={depositOpen} onClose={() => setDepositOpen(false)} />
-      <WithdrawModal isOpen={withdrawOpen} onClose={() => setWithdrawOpen(false)} />
     </div>
   );
 }

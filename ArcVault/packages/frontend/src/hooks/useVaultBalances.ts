@@ -3,6 +3,7 @@ import {
   TREASURY_VAULT_ADDRESS,
   TreasuryVaultABI,
 } from '@/lib/contracts';
+import { arcTestnet } from '@/lib/chains';
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -17,7 +18,7 @@ import {
  * Polls every 30 s to keep the UI in sync with on-chain state.
  */
 export function useVaultBalances() {
-  const { isConnected } = useAccount();
+  const { isConnected, chain } = useAccount();
 
   const contract = {
     address: TREASURY_VAULT_ADDRESS,
@@ -33,8 +34,8 @@ export function useVaultBalances() {
       { ...contract, functionName: 'liquidityThreshold' },
     ],
     query: {
-      enabled: isConnected,
-      refetchInterval: isConnected ? 30_000 : false,
+      enabled: isConnected && chain?.id === arcTestnet.id,
+      refetchInterval: isConnected && chain?.id === arcTestnet.id ? 30_000 : false,
       retry: 1,
     },
   });
