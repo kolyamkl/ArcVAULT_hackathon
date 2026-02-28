@@ -1,3 +1,29 @@
+# Environment files
 .env
 .env.local
 .env.*.local
+
+# Dependencies
+node_modules
+
+# macOS
+.DS_Store
+
+# Next.js
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Foundry
+ArcVault/packages/contracts/out/
+ArcVault/packages/contracts/cache/
+ArcVault/packages/contracts/broadcast/
+
+# Firebase
+firebase-debug.log
+firebase-debug*.log
+
+# Claude Code
+.claude/
+.vercel
+.env*.local

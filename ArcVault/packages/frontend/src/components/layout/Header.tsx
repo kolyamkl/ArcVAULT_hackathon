@@ -8,7 +8,7 @@ import { ConnectWalletButton } from '@/components/wallet/ConnectWalletButton';
 
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
-  '/vault': 'Pipeline Analysis',
+  '/vault': 'Treasury Vault',
   '/fx': 'FX Conversion',
   '/pipeline': 'Pipeline Builder',
 };
@@ -26,7 +26,7 @@ export function Header({ className, onMobileMenuToggle }: HeaderProps) {
     <header
       className={clsx(
         'sticky top-0 z-30 h-16 flex-shrink-0',
-        'bg-[#191817e6] backdrop-blur-md border-b border-[#C9A96212]',
+        'bg-[#12121060] backdrop-blur-[24px] border-b border-[#C9A96210]',
         'flex items-center justify-between px-6',
         className
       )}
