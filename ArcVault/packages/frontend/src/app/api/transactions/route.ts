@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
 import {
   transactionsQuerySchema,
   parsePagination,

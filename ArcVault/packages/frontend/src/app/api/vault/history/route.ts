@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parsePagination, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 const VAULT_EVENT_TYPES = ["SWEEP", "REDEEM", "DEPOSIT", "WITHDRAW"];
 
 // GET /api/vault/history — vault-related transactions with optional type filter

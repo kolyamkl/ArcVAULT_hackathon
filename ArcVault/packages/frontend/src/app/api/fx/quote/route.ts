@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { getStableFXAdapter } from "@/services/index";
 import { fxQuoteQuerySchema, serializeDecimals } from "@/lib/validations/api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/fx/quote — request a new FX quote
 export async function GET(req: NextRequest) {
   try {
