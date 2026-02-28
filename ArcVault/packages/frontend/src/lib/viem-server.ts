@@ -14,16 +14,23 @@ export function getPublicClient() {
 }
 
 /**
- * Server-side wallet client for write transactions (executePayout, etc.).
- * Uses DEPLOYER_PRIVATE_KEY from env — only available in API routes, never exposed to browser.
+ * Returns the deployer account (address + signer) derived from DEPLOYER_PRIVATE_KEY.
+ * Needed for EIP-712 signing in StableFX and other server-side signing flows.
  */
-export function getWalletClient() {
+export function getDeployerAccount() {
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!privateKey) {
     throw new Error('DEPLOYER_PRIVATE_KEY environment variable is not set');
   }
+  return privateKeyToAccount(privateKey as `0x${string}`);
+}
 
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
+/**
+ * Server-side wallet client for write transactions (executePayout, etc.).
+ * Uses DEPLOYER_PRIVATE_KEY from env — only available in API routes, never exposed to browser.
+ */
+export function getWalletClient() {
+  const account = getDeployerAccount();
 
   return createWalletClient({
     account,

@@ -42,18 +42,17 @@ export interface FXQuote {
   fromAmount: number;
   toAmount: number;
   rate: number;
+  spread: number;
   expiresAt: string;
-  provider: string;
+  status: string;
 }
 
 export interface FXExecution {
-  id: string;
-  quoteId: string;
-  status: string;
   txHash: string;
   fromAmount: number;
   toAmount: number;
-  executedAt: string;
+  rate: number;
+  status: string;
 }
 
 export interface FXHistoryEntry {

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(tail:*)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/contracts && forge install OpenZeppelin/openzeppelin-contracts --no-commit 2>&1)",
+      "Bash(curl -L https://foundry.paradigm.xyz | bash 2>&1)",
+      "Bash(export PATH=\"$PATH:/c/Users/glibl/.foundry/bin\" && foundryup 2>&1)",
+      "Bash(export PATH=\"$PATH:/c/Users/glibl/.foundry/bin\" && cd D:/ArcVault/ArcVault/packages/contracts && forge install OpenZeppelin/openzeppelin-contracts 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && npx prisma generate 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && npx prisma validate 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && DATABASE_URL=\"postgresql://test:test@localhost:5432/test\" npx prisma validate 2>&1)",
+      "Bash(head:*)",
+      "Bash(grep error TS:*)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/contracts && forge install OpenZeppelin/openzeppelin-contracts --no-git 2>&1)",
+      "Bash(export:*)",
+      "Bash(export PATH=\"$HOME/.foundry/bin:$PATH\" && cd D:/ArcVault/ArcVault/packages/contracts && forge install foundry-rs/forge-std --no-git 2>&1)",
+      "Bash(export PATH=\"$HOME/.foundry/bin:$PATH\" && cd D:/ArcVault/ArcVault/packages/contracts && forge build 2>&1)",
+      "Bash(export PATH=\"$HOME/.foundry/bin:$PATH\" && cd D:/ArcVault/ArcVault/packages/contracts && forge test -vvv 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && DATABASE_URL=\"postgresql://test:test@localhost:5432/test\" npx prisma generate 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && npx tsc --noEmit 2>&1)",
+      "Bash(export PATH=\"$HOME/.foundry/bin:$PATH\" && cd D:/ArcVault/ArcVault/packages/contracts && forge test 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/frontend && npx vitest run 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/contracts && export PATH=\"$HOME/.foundry/bin:$PATH\" && forge build 2>&1)",
+      "Bash(cd D:/ArcVault/ArcVault/packages/contracts && export PATH=\"$HOME/.foundry/bin:$PATH\" && forge test -vvv 2>&1)",
+      "Bash(cd /d/ArcVault/ArcVault/packages/frontend && npx vitest run 2>&1)",
+      "Bash(cd:*)",
+      "Bash(curl -s http://localhost:3000/api/vault/status 2>&1 && echo \"\" && curl -s http://localhost:3000/api/fx/quote -X POST -H \"Content-Type: application/json\" -d '{\"from\":\"USDC\",\"to\":\"EURC\",\"amount\":\"10000\"}' 2>&1)",
+      "Bash(curl:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

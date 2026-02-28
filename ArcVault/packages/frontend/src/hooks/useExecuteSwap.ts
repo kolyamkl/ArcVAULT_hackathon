@@ -13,12 +13,11 @@ export interface ExecuteSwapParams {
 }
 
 export interface SwapResult {
-  id: string;
-  status: 'COMPLETED' | 'FAILED';
-  txHash?: string;
-  toAmount: string;
+  txHash: string;
+  fromAmount: number;
+  toAmount: number;
   rate: number;
-  executedAt: string;
+  status: 'success' | 'failed';
 }
 
 // ---------------------------------------------------------------------------

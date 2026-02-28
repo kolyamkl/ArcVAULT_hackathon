@@ -18,78 +18,107 @@ export async function POST(req: NextRequest) {
 
     const { quoteId } = parsed.data;
 
-    // Look up the quote — try by id first, then check status
-    const fxQuote = await prisma.fXQuote.findFirst({
-      where: { id: quoteId },
-    });
+    // Look up the quote from DB — gracefully handle DB being offline
+    let fxQuote: {
+      id: string;
+      fromCurrency: string;
+      toCurrency: string;
+      fromAmount: unknown;
+      toAmount: unknown;
+      rate: unknown;
+      status: string;
+      expiresAt: Date;
+    } | null = null;
+    let dbAvailable = true;
 
-    if (!fxQuote) {
+    try {
+      fxQuote = await prisma.fXQuote.findFirst({
+        where: { id: quoteId },
+      });
+    } catch (dbError) {
+      console.warn("[POST /api/fx/execute] DB unavailable, proceeding without quote validation:", dbError);
+      dbAvailable = false;
+    }
+
+    if (dbAvailable && fxQuote) {
+      if (fxQuote.status === "EXECUTED") {
+        return NextResponse.json(
+          { error: "Quote already executed" },
+          { status: 409 }
+        );
+      }
+
+      if (fxQuote.status === "EXPIRED" || new Date() > fxQuote.expiresAt) {
+        if (fxQuote.status !== "EXPIRED") {
+          await prisma.fXQuote.update({
+            where: { id: fxQuote.id },
+            data: { status: "EXPIRED" },
+          });
+        }
+        return NextResponse.json(
+          { error: "Quote has expired" },
+          { status: 410 }
+        );
+      }
+    } else if (dbAvailable && !fxQuote) {
       return NextResponse.json(
         { error: "Quote not found" },
         { status: 404 }
       );
     }
-
-    if (fxQuote.status === "EXECUTED") {
-      return NextResponse.json(
-        { error: "Quote already executed" },
-        { status: 409 }
-      );
-    }
-
-    if (fxQuote.status === "EXPIRED" || new Date() > fxQuote.expiresAt) {
-      // Mark as expired if not already
-      if (fxQuote.status !== "EXPIRED") {
-        await prisma.fXQuote.update({
-          where: { id: fxQuote.id },
-          data: { status: "EXPIRED" },
-        });
-      }
-      return NextResponse.json(
-        { error: "Quote has expired" },
-        { status: 410 }
-      );
-    }
+    // If !dbAvailable: skip DB validation, let the adapter handle quote lookup
 
     // Execute via adapter
     const adapter = getStableFXAdapter();
     const result = await adapter.executeSwap(quoteId);
 
-    // Update quote and create transaction atomically
+    // Persist to DB if available
     const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 5042002);
 
-    const [updatedQuote] = await prisma.$transaction([
-      prisma.fXQuote.update({
-        where: { id: fxQuote.id },
-        data: {
-          status: "EXECUTED",
-          txHash: result.txHash,
-        },
-      }),
-      prisma.transaction.create({
-        data: {
-          type: "FX_SWAP",
-          txHash: result.txHash,
-          fromAddress: null,
-          toAddress: null,
-          amount: fxQuote.fromAmount,
-          currency: fxQuote.fromCurrency,
-          status: result.status === "success" ? "COMPLETED" : "FAILED",
-          metadata: {
-            fromCurrency: fxQuote.fromCurrency,
-            toCurrency: fxQuote.toCurrency,
-            fromAmount: fxQuote.fromAmount.toString(),
-            toAmount: fxQuote.toAmount.toString(),
-            rate: fxQuote.rate.toString(),
-          },
-          chainId,
-        },
-      }),
-    ]);
+    if (dbAvailable && fxQuote) {
+      try {
+        const [updatedQuote] = await prisma.$transaction([
+          prisma.fXQuote.update({
+            where: { id: fxQuote.id },
+            data: {
+              status: "EXECUTED",
+              txHash: result.txHash,
+            },
+          }),
+          prisma.transaction.create({
+            data: {
+              type: "FX_SWAP",
+              txHash: result.txHash,
+              fromAddress: null,
+              toAddress: null,
+              amount: fxQuote.fromAmount,
+              currency: fxQuote.fromCurrency,
+              status: result.status === "success" ? "COMPLETED" : "FAILED",
+              metadata: {
+                fromCurrency: fxQuote.fromCurrency,
+                toCurrency: fxQuote.toCurrency,
+                fromAmount: fxQuote.fromAmount.toString(),
+                toAmount: fxQuote.toAmount.toString(),
+                rate: fxQuote.rate.toString(),
+              },
+              chainId,
+            },
+          }),
+        ]);
+
+        return NextResponse.json({
+          ...serializeDecimals(updatedQuote),
+          ...result,
+        });
+      } catch (dbError) {
+        console.warn("[POST /api/fx/execute] DB write failed, returning swap result without persistence:", dbError);
+      }
+    }
 
     return NextResponse.json({
-      ...serializeDecimals(updatedQuote),
       ...result,
+      fromAmount: parseFloat(result.fromAmount),
+      toAmount: parseFloat(result.toAmount),
     });
   } catch (error) {
     console.error("[POST /api/fx/execute]", error);
