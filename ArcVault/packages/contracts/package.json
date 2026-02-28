@@ -1,0 +1,14 @@
+{
+  "name": "@arcvault/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ArcVault Solidity smart contracts (Foundry)",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv",
+    "test:gas": "forge test --gas-report",
+    "deploy:testnet": "forge script script/Deploy.s.sol --broadcast --rpc-url $ARC_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY",
+    "fmt": "forge fmt",
+    "snapshot": "forge snapshot"
+  }
+}
