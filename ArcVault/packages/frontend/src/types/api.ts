@@ -48,11 +48,14 @@ export interface FXQuote {
 }
 
 export interface FXExecution {
+  id: string;
+  quoteId: string;
   txHash: string;
   fromAmount: number;
   toAmount: number;
-  rate: number;
+  rate?: number;
   status: string;
+  executedAt: string;
 }
 
 export interface FXHistoryEntry {

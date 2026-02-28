@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
       id: string;
       fromCurrency: string;
       toCurrency: string;
-      fromAmount: unknown;
-      toAmount: unknown;
-      rate: unknown;
+      fromAmount: { toString(): string };
+      toAmount: { toString(): string };
+      rate: { toString(): string };
       status: string;
       expiresAt: Date;
     } | null = null;
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
               txHash: result.txHash,
               fromAddress: null,
               toAddress: null,
-              amount: fxQuote.fromAmount,
+              amount: Number(fxQuote.fromAmount.toString()),
               currency: fxQuote.fromCurrency,
               status: result.status === "success" ? "COMPLETED" : "FAILED",
               metadata: {

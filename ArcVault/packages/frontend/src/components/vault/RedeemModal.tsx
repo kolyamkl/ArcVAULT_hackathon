@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Check, AlertCircle, ExternalLink, ArrowUpFromLine, ShieldCheck, ShieldAlert, ChevronDown } from 'lucide-react';
+import { Check, AlertCircle, ExternalLink, RotateCcw, ShieldCheck, ShieldAlert, ChevronDown } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Modal } from '@/components/shared/Modal';
 import { Button } from '@/components/shared/Button';
-import { useWithdraw } from '@/hooks/useWithdraw';
+import { useRedeemFromUSYC } from '@/hooks/useRedeemFromUSYC';
 import { useVaultBalances } from '@/hooks/useVaultBalances';
 import { formatCurrency } from '@/lib/format';
 import { shortenAddress } from '@/lib/utils';
@@ -15,12 +15,12 @@ import { shortenAddress } from '@/lib/utils';
 // Types
 // ---------------------------------------------------------------------------
 
-interface WithdrawModalProps {
+interface RedeemModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TxStep = 'input' | 'withdrawing' | 'success' | 'error';
+type TxStep = 'input' | 'redeeming' | 'success' | 'error';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,18 +34,17 @@ const PRESET_LABELS = ['$10K', '$25K', '$50K', '$100K'] as const;
 // Component
 // ---------------------------------------------------------------------------
 
-export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
+export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
   const { isConnected } = useAccount();
-  const { liquidUSDC, threshold } = useVaultBalances();
-  const withdrawMutation = useWithdraw();
+  const { usycBalance } = useVaultBalances();
+  const redeemMutation = useRedeemFromUSYC();
 
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<TxStep>('input');
   const [txHash, setTxHash] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const availableLiquid = Number(liquidUSDC) / 1e6;
-  const currentThreshold = Number(threshold) / 1e6;
+  const availableBalance = Number(usycBalance) / 1e6;
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -66,8 +65,7 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
   }, [step, onClose]);
 
   const numericAmount = parseFloat(amount) || 0;
-  const isValidAmount = numericAmount > 0 && numericAmount <= availableLiquid;
-  const wouldBreachThreshold = numericAmount > 0 && (availableLiquid - numericAmount) < currentThreshold;
+  const isValidAmount = numericAmount > 0 && numericAmount <= availableBalance;
 
   const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^0-9.]/g, '');
@@ -78,18 +76,18 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
   }, []);
 
   const handleMaxClick = useCallback(() => {
-    setAmount(String(availableLiquid));
-  }, [availableLiquid]);
+    setAmount(String(availableBalance));
+  }, [availableBalance]);
 
   const handlePreset = useCallback((value: number) => {
     setAmount(String(value));
   }, []);
 
-  const handleWithdraw = useCallback(async () => {
+  const handleRedeem = useCallback(async () => {
     if (!isValidAmount || !amount) return;
 
     try {
-      setStep('withdrawing');
+      setStep('redeeming');
       const amountBigInt = parseUnits(amount, 6);
 
       if (amountBigInt === 0n) {
@@ -98,14 +96,14 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
         return;
       }
 
-      const receipt = await withdrawMutation.mutateAsync({ amount: amountBigInt });
+      const receipt = await redeemMutation.mutateAsync({ amount: amountBigInt });
       setTxHash(receipt.transactionHash);
       setStep('success');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Transaction failed');
       setStep('error');
     }
-  }, [isValidAmount, amount, withdrawMutation]);
+  }, [isValidAmount, amount, redeemMutation]);
 
   const handleRetry = useCallback(() => {
     setStep('input');
@@ -117,8 +115,8 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     : '0';
 
   let validationError: string | undefined;
-  if (numericAmount > availableLiquid) {
-    validationError = 'Exceeds available liquid balance';
+  if (numericAmount > availableBalance) {
+    validationError = 'Exceeds available USYC balance';
   }
 
   return (
@@ -126,19 +124,19 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
       <div className="-mt-4">
         {/* Custom header */}
         <div className="mb-4">
-          <h3 className="text-[22px] font-bold text-foreground">Withdraw USDC</h3>
-          <p className="text-sm text-muted mt-1">Withdraw funds from your ArcVault treasury</p>
+          <h3 className="text-[22px] font-bold text-foreground">Redeem from USYC</h3>
+          <p className="text-sm text-muted mt-1">Convert USYC back to liquid USDC</p>
         </div>
         <div className="h-px bg-[#383430] mb-5" />
 
         {/* Input step */}
-        {(step === 'input' || step === 'withdrawing') && (
+        {(step === 'input' || step === 'redeeming') && (
           <div className="space-y-4">
             {/* Role requirement notice */}
             <div className="flex items-start gap-2 p-3 bg-[#E0A84C10] rounded-lg border border-[#E0A84C30]">
               <ShieldAlert className="w-4 h-4 text-[#E0A84C] flex-shrink-0 mt-0.5" />
               <p className="text-xs text-[#A09D95]">
-                Withdrawals require TREASURY_MANAGER_ROLE. The transaction will revert if your
+                Redeeming requires TREASURY_MANAGER_ROLE. The transaction will revert if your
                 wallet does not have the required role.
               </p>
             </div>
@@ -160,12 +158,12 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
                     />
                   </div>
                 </div>
-                {/* USDC token badge */}
+                {/* USYC token badge */}
                 <div className="flex items-center gap-2 bg-[#1A1E2A] rounded-lg px-3 py-1.5 border border-[#383430]">
                   <div className="w-5 h-5 rounded-full bg-[#D4A853] flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-[#0A0A0A]">$</span>
+                    <span className="text-[8px] font-bold text-[#0A0A0A]">Y</span>
                   </div>
-                  <span className="text-sm font-medium text-foreground">USDC</span>
+                  <span className="text-sm font-medium text-foreground">USYC</span>
                   <ChevronDown className="w-3.5 h-3.5 text-muted" />
                 </div>
               </div>
@@ -179,7 +177,7 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               <p className="text-sm text-muted">Available Balance</p>
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">
-                  {formatCurrency(availableLiquid, { decimals: 2 })} USDC
+                  {formatCurrency(availableBalance, { decimals: 2 })} USYC
                 </p>
                 <button
                   type="button"
@@ -214,21 +212,6 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               })}
             </div>
 
-            {/* Threshold warning */}
-            {wouldBreachThreshold && isValidAmount && (
-              <div className="flex items-start gap-2 p-3 bg-[#E0A84C10] border border-[#E0A84C30] rounded-lg animate-fade-in">
-                <AlertCircle className="w-4 h-4 text-[#E0A84C] flex-shrink-0 mt-0.5" />
-                <div className="text-xs text-[#A09D95] space-y-0.5">
-                  <p className="font-medium text-[#E0A84C]">Below Liquidity Threshold</p>
-                  <p>
-                    This withdrawal would bring the liquid balance to{' '}
-                    {formatCurrency(availableLiquid - numericAmount, { decimals: 2 })}, which
-                    is below the {formatCurrency(currentThreshold)} threshold.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Details card */}
             <div className="bg-[#0A0E1A] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -241,26 +224,26 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted">Source</span>
-                <span className="text-sm text-[#D4A853] font-medium">ArcVault Treasury</span>
+                <span className="text-sm text-[#D4A853] font-medium">USYC Yield Vault</span>
               </div>
             </div>
 
-            {/* Withdraw button */}
+            {/* Redeem button */}
             <Button
               variant="primary"
               className="w-full !h-[52px] !text-base !font-semibold"
-              onClick={handleWithdraw}
-              disabled={!isConnected || !isValidAmount || step === 'withdrawing'}
-              loading={step === 'withdrawing'}
+              onClick={handleRedeem}
+              disabled={!isConnected || !isValidAmount || step === 'redeeming'}
+              loading={step === 'redeeming'}
             >
               {!isConnected ? (
                 'Connect Wallet'
-              ) : step === 'withdrawing' ? (
-                'Withdrawing...'
+              ) : step === 'redeeming' ? (
+                'Redeeming...'
               ) : (
                 <span className="inline-flex items-center gap-2">
-                  <ArrowUpFromLine className="w-4 h-4" />
-                  Withdraw ${displayAmount} USDC
+                  <RotateCcw className="w-4 h-4" />
+                  Redeem ${displayAmount} USDC
                 </span>
               )}
             </Button>
@@ -280,9 +263,9 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
               <Check className="w-6 h-6 text-success" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-lg font-semibold text-foreground">Withdrawal Confirmed</p>
+              <p className="text-lg font-semibold text-foreground">Redemption Confirmed</p>
               <p className="text-sm text-muted">
-                {formatCurrency(numericAmount, { decimals: 2 })} USDC withdrawn successfully
+                {formatCurrency(numericAmount, { decimals: 2 })} USYC redeemed to USDC successfully
               </p>
             </div>
             {txHash && (
