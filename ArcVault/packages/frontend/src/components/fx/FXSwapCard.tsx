@@ -383,8 +383,9 @@ export function FXSwapCard() {
   const numericFrom = Number(fromAmount) || 0;
   const numericTo = quote?.toAmount ?? 0;
 
-  // Fee calculation (0.05% of from amount)
-  const feeAmount = numericFrom * 0.0005;
+  // Fee calculation from quote spread (default 0.1%)
+  const feeRate = quote?.spread ?? 0.001;
+  const feeAmount = numericFrom * feeRate;
 
   // CTA label
   const ctaLabel = !isConnected
@@ -494,7 +495,7 @@ export function FXSwapCard() {
                       Swap Fee
                     </span>
                     <span className="text-[13px] font-medium text-foreground">
-                      0.05% (~{fromMeta.fiatSymbol}
+                      {(feeRate * 100).toFixed(2)}% (~{fromMeta.fiatSymbol}
                       {feeAmount.toFixed(2)})
                     </span>
                   </div>

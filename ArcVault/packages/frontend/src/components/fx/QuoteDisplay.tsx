@@ -85,8 +85,8 @@ export function QuoteDisplay({
   const seconds = secondsLeft % 60;
   const countdownText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-  // Calculate spread percentage if not directly provided
-  const spread = 0.05; // Default spread from spec
+  // Use spread from quote (percentage), fallback to 0.1% default
+  const spread = (quote.spread ?? 0.001) * 100;
 
   return (
     <div className="space-y-2 py-3 text-sm border-t border-[#383430]">

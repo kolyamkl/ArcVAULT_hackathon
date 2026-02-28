@@ -238,8 +238,9 @@ export function getMockFXQuote(from: string, to: string, amount: number): FXQuot
     fromAmount: amount,
     toAmount: Math.round(amount * rate * 100) / 100,
     rate,
+    spread: 0.001,
     expiresAt,
-    provider: 'StableFX',
+    status: 'PENDING',
   };
 }
 
@@ -281,8 +282,8 @@ export const mockPipelines: Pipeline[] = [
     name: 'Monthly Payroll',
     description: 'Converts USDC to local currencies and distributes payroll to all team wallets',
     steps: [
-      { id: 'step-1', type: 'FX_CONVERT', config: { from: 'USDC', to: 'EURC', amount: 30000 }, position: { x: 100, y: 100 } },
-      { id: 'step-2', type: 'FX_CONVERT', config: { from: 'USDC', to: 'GBPC', amount: 15000 }, position: { x: 100, y: 250 } },
+      { id: 'step-1', type: 'FX_CONVERT', config: { fromCurrency: 'USDC', toCurrency: 'EURC', amount: 30000 }, position: { x: 100, y: 100 } },
+      { id: 'step-2', type: 'FX_CONVERT', config: { fromCurrency: 'USDC', toCurrency: 'GBPC', amount: 15000 }, position: { x: 100, y: 250 } },
       { id: 'step-3', type: 'APPROVAL', config: { approvers: ['0xAdmin1'], threshold: 1 }, position: { x: 350, y: 175 } },
       { id: 'step-4', type: 'PAYOUT', config: { recipients: 8, totalAmount: 45000 }, position: { x: 600, y: 175 } },
     ],
@@ -318,7 +319,7 @@ export const mockPipelines: Pipeline[] = [
     name: 'Guarded Payroll with Delay',
     description: 'Full pipeline using approval, condition, and delay nodes',
     steps: [
-      { id: 'step-1', type: 'FX_CONVERT', config: { from: 'USDC', to: 'EURC', amount: 20000 }, position: { x: 100, y: 100 } },
+      { id: 'step-1', type: 'FX_CONVERT', config: { fromCurrency: 'USDC', toCurrency: 'EURC', amount: 20000 }, position: { x: 100, y: 100 } },
       { id: 'step-2', type: 'APPROVAL', config: { approvers: ['0xAdmin1', '0xAdmin2'], threshold: 2 }, position: { x: 300, y: 100 } },
       { id: 'step-3', type: 'CONDITION', config: { field: 'amount', operator: '>', value: 10000 }, position: { x: 500, y: 100 } },
       { id: 'step-4', type: 'DELAY', config: { delayType: 'duration', durationHours: 0, durationMinutes: 30 }, position: { x: 700, y: 50 } },
