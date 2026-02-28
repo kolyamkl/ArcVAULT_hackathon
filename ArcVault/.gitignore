@@ -1,0 +1,32 @@
+# ---------- general ----------
+node_modules/
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+
+# ---------- Next.js ----------
+.next/
+out/
+
+# ---------- Foundry ----------
+cache/
+out/
+broadcast/
+deployments/
+
+# ---------- Prisma ----------
+packages/frontend/prisma/migrations/*.sql.bak
+
+# ---------- Vercel ----------
+.vercel/
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---------- testing ----------
+coverage/

@@ -1,0 +1,40 @@
+{
+  "name": "arcvault",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise Treasury & FX Operations Platform on Arc Blockchain",
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+
+    "contracts:build": "cd packages/contracts && forge build",
+    "contracts:test": "cd packages/contracts && forge test -vvv",
+    "contracts:deploy": "cd packages/contracts && forge script script/Deploy.s.sol --broadcast --rpc-url $ARC_RPC_URL",
+
+    "db:migrate": "pnpm --filter frontend exec prisma migrate dev",
+    "db:migrate:prod": "pnpm --filter frontend exec prisma migrate deploy",
+    "db:seed": "pnpm --filter frontend exec prisma db seed",
+    "db:studio": "pnpm --filter frontend exec prisma studio",
+    "db:generate": "pnpm --filter frontend exec prisma generate",
+
+    "test": "pnpm --filter frontend test && pnpm contracts:test",
+    "lint": "pnpm --filter frontend lint",
+    "typecheck": "pnpm --filter frontend exec tsc --noEmit",
+
+    "clean": "rm -rf packages/frontend/.next packages/contracts/out packages/contracts/cache node_modules/.cache",
+    "postinstall": "pnpm db:generate"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.1.0",
+  "pnpm": {
+    "overrides": {
+      "@walletconnect/core": "2.21.1",
+      "@walletconnect/sign-client": "2.21.1",
+      "@walletconnect/types": "2.21.1",
+      "@walletconnect/utils": "2.21.1"
+    }
+  }
+}
