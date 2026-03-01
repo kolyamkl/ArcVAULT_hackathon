@@ -14,7 +14,7 @@ import { parseUnits } from 'viem';
 import { useFXQuote } from '@/hooks/useFXQuote';
 import { useExecuteSwap } from '@/hooks/useExecuteSwap';
 import { useOnChainSwap } from '@/hooks/useOnChainSwap';
-import { useVaultBalances } from '@/hooks/useVaultBalances';
+import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { formatCurrency, shortenAddress } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Skeleton } from '@/components/shared/Skeleton';
@@ -247,13 +247,16 @@ function CurrencyInputSection({
 
 export function FXSwapCard() {
   const { isConnected } = useAccount();
-  const { liquidUSDC } = useVaultBalances();
   const executeSwap = useExecuteSwap();
   const onChainSwap = useOnChainSwap();
 
   // Local state
   const [fromCurrency, setFromCurrency] = useState('USDC');
   const [toCurrency, setToCurrency] = useState('EURC');
+
+  // On-chain wallet balances for both tokens
+  const fromTokenBalance = useTokenBalance(fromCurrency);
+  const toTokenBalance = useTokenBalance(toCurrency);
   const [fromAmount, setFromAmount] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -281,8 +284,9 @@ export function FXSwapCard() {
     });
   }, [quote]);
 
-  // Available balance display
-  const availableBalance = Number(liquidUSDC) / 1e6;
+  // Available balance display (from wallet, not vault)
+  const fromBalance = Number(fromTokenBalance.balance) / 1e6;
+  const toBalance = Number(toTokenBalance.balance) / 1e6;
 
   // Countdown for quote expiry
   const [secondsLeft, setSecondsLeft] = useState(30);
@@ -458,7 +462,7 @@ export function FXSwapCard() {
             excludeCurrency={toCurrency}
             onCurrencyChange={handleFromCurrencyChange}
             fiatEquivalent={`\u2248 ${fromMeta.fiatSymbol}${numericFrom.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            balance={`Balance: ${formatCurrency(availableBalance, fromCurrency)}`}
+            balance={`Balance: ${formatCurrency(fromBalance, fromCurrency)}`}
             disabled={isSwapping}
           />
 
@@ -487,7 +491,7 @@ export function FXSwapCard() {
             excludeCurrency={fromCurrency}
             onCurrencyChange={handleToCurrencyChange}
             fiatEquivalent={`\u2248 ${toMeta.fiatSymbol}${numericTo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            balance={`Balance: ${formatCurrency(0, toCurrency)}`}
+            balance={`Balance: ${formatCurrency(toBalance, toCurrency)}`}
             readOnly
             isLoading={isQuoteLoading}
           />
