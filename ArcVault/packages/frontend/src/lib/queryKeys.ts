@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 export interface VaultHistoryParams {
-  type?: 'deposit' | 'withdraw' | 'yield' | 'rebalance';
+  type?: string;
   page: number;
   limit: number;
 }

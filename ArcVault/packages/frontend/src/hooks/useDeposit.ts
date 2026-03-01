@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWriteContract, usePublicClient } from 'wagmi';
-import { erc20Abi } from 'viem';
+import { erc20Abi, formatUnits } from 'viem';
 import { queryKeys } from '@/lib/queryKeys';
+import { recordTransaction } from '@/lib/recordTransaction';
 import {
   TREASURY_VAULT_ADDRESS,
   USDC_ADDRESS,
@@ -83,11 +84,21 @@ export function useDeposit() {
         hash: depositHash,
       });
       console.log('[useDeposit] Deposit confirmed, status:', receipt.status);
+
+      // Record transaction in database for history table
+      recordTransaction({
+        type: 'DEPOSIT',
+        txHash: receipt.transactionHash,
+        amount: formatUnits(amount, 6),
+        blockNumber: Number(receipt.blockNumber),
+      });
+
       return receipt;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vault.balances });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+      queryClient.invalidateQueries({ queryKey: ['vault', 'history'] });
     },
   });
 }

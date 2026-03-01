@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const VAULT_EVENT_TYPES = ["SWEEP", "REDEEM", "DEPOSIT", "WITHDRAW"];
+const VAULT_EVENT_TYPES = ["SWEEP", "REDEEM", "DEPOSIT", "WITHDRAW", "WITHDRAWAL"];
 
 // GET /api/vault/history — vault-related transactions with optional type filter
 export async function GET(req: NextRequest) {
@@ -33,8 +33,16 @@ export async function GET(req: NextRequest) {
       prisma.transaction.count({ where }),
     ]);
 
+    const entries = transactions.map((tx) => {
+      const s = serializeDecimals(tx) as Record<string, unknown>;
+      return {
+        ...s,
+        timestamp: s.createdAt,  // frontend expects "timestamp"
+      };
+    });
+
     return NextResponse.json({
-      events: transactions.map(serializeDecimals),
+      entries,
       total,
       page,
       limit,

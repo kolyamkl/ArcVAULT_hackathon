@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWriteContract, usePublicClient } from 'wagmi';
+import { formatUnits } from 'viem';
 import { queryKeys } from '@/lib/queryKeys';
+import { recordTransaction } from '@/lib/recordTransaction';
 import {
   TREASURY_VAULT_ADDRESS,
   TreasuryVaultABI,
@@ -31,11 +33,21 @@ export function useWithdraw() {
         functionName: 'withdrawFunds',
         args: [amount],
       });
-      return await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      recordTransaction({
+        type: 'WITHDRAW',
+        txHash: receipt.transactionHash,
+        amount: formatUnits(amount, 6),
+        blockNumber: Number(receipt.blockNumber),
+      });
+
+      return receipt;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vault.balances });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+      queryClient.invalidateQueries({ queryKey: ['vault', 'history'] });
     },
   });
 }

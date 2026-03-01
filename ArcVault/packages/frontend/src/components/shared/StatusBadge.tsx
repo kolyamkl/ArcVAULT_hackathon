@@ -2,6 +2,7 @@ import { clsx } from 'clsx';
 
 interface StatusBadgeProps {
   status: 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED' | string;
+  label?: string;
   className?: string;
 }
 
@@ -16,7 +17,7 @@ const statusStyles: Record<string, string> = {
   PAUSED: 'bg-[#9B8EC815] text-[#9B8EC8]',
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   const normalized = status.toUpperCase();
   const colorClasses = statusStyles[normalized] || 'bg-muted/10 text-muted';
 
@@ -28,7 +29,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {status}
+      {label ?? status}
     </span>
   );
 }

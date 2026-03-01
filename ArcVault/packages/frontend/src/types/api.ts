@@ -22,11 +22,12 @@ export interface VaultStatus {
 
 export interface VaultHistoryEntry {
   id: string;
-  type: 'DEPOSIT' | 'WITHDRAWAL' | 'YIELD' | 'REBALANCE';
+  type: 'DEPOSIT' | 'WITHDRAW' | 'SWEEP' | 'REDEEM';
   amount: number;
   timestamp: string;
   txHash: string;
   status: string;
+  currency?: string;
 }
 
 export interface VaultHistory {

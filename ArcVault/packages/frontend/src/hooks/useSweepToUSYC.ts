@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWriteContract, usePublicClient } from 'wagmi';
 import { queryKeys } from '@/lib/queryKeys';
+import { recordTransaction } from '@/lib/recordTransaction';
 import {
   TREASURY_VAULT_ADDRESS,
   TreasuryVaultABI,
@@ -24,11 +25,23 @@ export function useSweepToUSYC() {
         abi: TreasuryVaultABI,
         functionName: 'sweepToUSYC',
       });
-      return await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      // Sweep amount is determined by the contract; record with 0 and let chain indexer update
+      recordTransaction({
+        type: 'SWEEP',
+        txHash: receipt.transactionHash,
+        amount: '0',
+        currency: 'USYC',
+        blockNumber: Number(receipt.blockNumber),
+      });
+
+      return receipt;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vault.balances });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+      queryClient.invalidateQueries({ queryKey: ['vault', 'history'] });
     },
   });
 }

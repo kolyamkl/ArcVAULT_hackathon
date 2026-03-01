@@ -31,16 +31,23 @@ const PAGE_SIZE = 20;
 const TYPE_OPTIONS = [
   { label: 'All Types', value: 'ALL' },
   { label: 'Deposit', value: 'DEPOSIT' },
-  { label: 'Withdrawal', value: 'WITHDRAWAL' },
-  { label: 'Yield', value: 'YIELD' },
-  { label: 'Rebalance', value: 'REBALANCE' },
+  { label: 'Withdraw', value: 'WITHDRAW' },
+  { label: 'Sweep', value: 'SWEEP' },
+  { label: 'Redeem', value: 'REDEEM' },
 ];
 
 const TYPE_BADGE_VARIANT: Record<string, string> = {
   DEPOSIT: 'COMPLETED',
-  WITHDRAWAL: 'PENDING',
-  YIELD: 'PROCESSING',
-  REBALANCE: 'PROCESSING',
+  WITHDRAW: 'PENDING',
+  SWEEP: 'PROCESSING',
+  REDEEM: 'PROCESSING',
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  DEPOSIT: 'Deposit',
+  WITHDRAW: 'Withdraw',
+  SWEEP: 'Sweep to USYC',
+  REDEEM: 'Redeem USYC',
 };
 
 const EXPLORER_URL = process.env.NEXT_PUBLIC_ARC_EXPLORER_URL || 'https://testnet-explorer.arc.io';
@@ -56,7 +63,7 @@ export function VaultHistoryTable({ loading: externalLoading }: { loading?: bool
   const { data, isLoading } = useVaultHistory({
     page,
     limit: PAGE_SIZE,
-    type: typeFilter !== 'ALL' ? (typeFilter.toLowerCase() as 'deposit' | 'withdraw' | 'yield' | 'rebalance') : undefined,
+    type: typeFilter !== 'ALL' ? typeFilter : undefined,
   });
 
   const isLoadingAny = externalLoading || isLoading;
@@ -81,7 +88,8 @@ export function VaultHistoryTable({ loading: externalLoading }: { loading?: bool
       header: 'Type',
       render: (row: VaultEventRow) => {
         const variant = TYPE_BADGE_VARIANT[row.type] ?? row.type;
-        return <StatusBadge status={variant} className="!text-xs" />;
+        const label = TYPE_LABELS[row.type] ?? row.type;
+        return <StatusBadge status={variant} label={label} className="!text-xs" />;
       },
     },
     {
