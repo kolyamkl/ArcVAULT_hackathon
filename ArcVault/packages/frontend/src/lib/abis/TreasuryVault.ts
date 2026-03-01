@@ -12,7 +12,7 @@ export const TreasuryVaultABI = [
   { type: 'function', name: 'DEFAULT_ADMIN_ROLE', inputs: [], outputs: [{ name: '', type: 'bytes32' }], stateMutability: 'view' },
   { type: 'function', name: 'hasRole', inputs: [{ name: 'role', type: 'bytes32' }, { name: 'account', type: 'address' }], outputs: [{ name: '', type: 'bool' }], stateMutability: 'view' },
   { type: 'function', name: 'grantRole', inputs: [{ name: 'role', type: 'bytes32' }, { name: 'account', type: 'address' }], outputs: [], stateMutability: 'nonpayable' },
-  { type: 'function', name: 'sweepToUSYC', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+  { type: 'function', name: 'sweepToUSYC', inputs: [], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'redeemFromUSYC', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   // Events
   { type: 'event', name: 'Deposited', inputs: [{ name: 'amount', type: 'uint256', indexed: false }] },

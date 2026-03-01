@@ -7,10 +7,8 @@ import {
 } from '@/lib/contracts';
 
 /**
- * Sweep liquid USDC into yield-bearing USYC.
- * Requires TREASURY_MANAGER_ROLE on-chain.
- *
- * Contract: TreasuryVault.sweepToUSYC(amount)
+ * Sweep liquid USDC above the liquidity threshold into yield-bearing USYC.
+ * Requires no arguments — the contract sweeps all USDC above the threshold.
  */
 export function useSweepToUSYC() {
   const { writeContractAsync } = useWriteContract();
@@ -18,14 +16,13 @@ export function useSweepToUSYC() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ amount }: { amount: bigint }) => {
+    mutationFn: async () => {
       if (!publicClient) throw new Error('Wallet not connected');
 
       const hash = await writeContractAsync({
         address: TREASURY_VAULT_ADDRESS,
         abi: TreasuryVaultABI,
         functionName: 'sweepToUSYC',
-        args: [amount],
       });
       return await publicClient.waitForTransactionReceipt({ hash });
     },

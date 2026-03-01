@@ -96,7 +96,7 @@ export function SweepModal({ isOpen, onClose }: SweepModalProps) {
         return;
       }
 
-      const receipt = await sweepMutation.mutateAsync({ amount: amountBigInt });
+      const receipt = await sweepMutation.mutateAsync();
       setTxHash(receipt.transactionHash);
       setStep('success');
     } catch (err) {
