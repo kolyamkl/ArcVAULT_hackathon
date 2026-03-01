@@ -1,12 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWriteContract, usePublicClient, useAccount } from 'wagmi';
-import { erc20Abi } from 'viem';
+import { erc20Abi, encodePacked, keccak256 } from 'viem';
 import { queryKeys } from '@/lib/queryKeys';
 import {
   STABLEFX_ADDRESS,
   TOKEN_ADDRESSES,
   StableFXABI,
 } from '@/lib/contracts';
+
+const QuoteCounterABI = [
+  { type: 'function', name: 'quoteCounter', inputs: [], outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view' },
+] as const;
 
 export interface OnChainSwapParams {
   fromCurrency: string;
@@ -70,18 +74,8 @@ export function useOnChainSwap() {
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
       console.log('[useOnChainSwap] Step 1: Approve confirmed');
 
-      // Step 2: Simulate requestQuote to get the quoteId, then execute it
-      console.log('[useOnChainSwap] Step 2: Simulating requestQuote...');
-      const { result } = await publicClient.simulateContract({
-        address: STABLEFX_ADDRESS,
-        abi: StableFXABI,
-        functionName: 'requestQuote',
-        args: [fromToken, toToken, amount],
-        account,
-      });
-      const [quoteId, outputAmount] = result;
-      console.log('[useOnChainSwap] Step 2: Simulated quoteId:', quoteId.toString(), 'outputAmount:', outputAmount.toString());
-
+      // Step 2: Call requestQuote on-chain
+      console.log('[useOnChainSwap] Step 2: Calling requestQuote on-chain...');
       const quoteHash = await writeContractAsync({
         address: STABLEFX_ADDRESS,
         abi: StableFXABI,
@@ -89,11 +83,27 @@ export function useOnChainSwap() {
         args: [fromToken, toToken, amount],
       });
       console.log('[useOnChainSwap] Step 2: requestQuote tx sent:', quoteHash);
-      await publicClient.waitForTransactionReceipt({ hash: quoteHash });
-      console.log('[useOnChainSwap] Step 2: requestQuote confirmed');
+      const quoteReceipt = await publicClient.waitForTransactionReceipt({ hash: quoteHash });
+      console.log('[useOnChainSwap] Step 2: requestQuote confirmed in block', quoteReceipt.blockNumber);
+
+      // Reconstruct the quoteId from on-chain state.
+      // The contract computes: keccak256(abi.encodePacked(quoteCounter, msg.sender, block.timestamp))
+      const quoteCounter = await publicClient.readContract({
+        address: STABLEFX_ADDRESS,
+        abi: QuoteCounterABI,
+        functionName: 'quoteCounter',
+      });
+      const block = await publicClient.getBlock({ blockNumber: quoteReceipt.blockNumber });
+      const quoteId = keccak256(
+        encodePacked(
+          ['uint256', 'address', 'uint256'],
+          [quoteCounter, account, block.timestamp],
+        ),
+      );
+      console.log('[useOnChainSwap] Step 2: Reconstructed quoteId:', quoteId);
 
       // Step 3: Execute the swap on-chain (transfers tokens)
-      console.log('[useOnChainSwap] Step 3: Executing swap with quoteId:', quoteId.toString());
+      console.log('[useOnChainSwap] Step 3: Executing swap with quoteId:', quoteId);
       const swapHash = await writeContractAsync({
         address: STABLEFX_ADDRESS,
         abi: StableFXABI,
@@ -106,14 +116,9 @@ export function useOnChainSwap() {
       });
       console.log('[useOnChainSwap] Step 3: Swap confirmed! txHash:', swapReceipt.transactionHash);
 
-      console.log('[useOnChainSwap] Swap complete:', {
-        txHash: swapReceipt.transactionHash,
-        outputAmount: outputAmount.toString(),
-      });
-
       return {
         txHash: swapReceipt.transactionHash,
-        outputAmount,
+        outputAmount: 0n, // actual output is handled by the contract
       };
     },
     onSuccess: () => {
