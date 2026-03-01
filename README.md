@@ -187,3 +187,52 @@ The pipeline builder lets users visually wire up complex fund flows as a directe
 - If a **condition** evaluates to false, the false-branch descendants are **skipped**
 - Progress is **persisted to the database** after every node so the frontend can poll and show real-time status
 - Final status is `COMPLETED`, `PARTIAL_FAILURE`, or `FAILED` based on how many nodes succeeded
+
+---
+
+## Frontend
+
+Built with Next.js 14 (App Router), React 18, Tailwind CSS, wagmi/viem for on-chain reads and writes, RainbowKit for wallet connection, React Flow for the pipeline canvas, and Recharts for data visualization.
+
+### Pages
+
+**Dashboard** (`/`) — Executive overview with six KPI cards (Total AUM, Yield Earned, APY, Liquid USDC, USYC Position, Pending Payouts), a yield-over-time area chart, and an asset allocation pie chart. All balances are read directly from the TreasuryVault contract via multicall and refresh every 30 seconds.
+
+**Treasury Vault** (`/vault`) — Full vault management. An action bar at the top provides Deposit, Withdraw, Sweep (USDC to USYC), and Redeem (USYC to USDC) buttons that open modal flows. Below that: a yield performance section with a period selector and SVG chart, a liquidity allocation panel with a stacked bar showing the USDC/USYC split and an adjustable threshold slider, and a paginated transaction history table.
+
+**FX Conversion** (`/fx`) — A centered swap card inspired by Uniswap. The user selects a currency pair (USDC/EURC), enters an amount, and sees a live quote with exchange rate, spread, and a 30-second countdown timer. Supports both on-chain swaps (via StableFX contract with ERC-20 approve flow) and off-chain API swaps.
+
+**Pipeline Builder** (`/pipeline`) — Three-column layout. The left sidebar contains a block palette with six draggable node types grouped into Recipients (Department, Employee, Contractor) and Flow Control (Approval, Condition, Delay), plus a list of saved pipeline configurations. The center is a React Flow canvas where users drop nodes, connect them with edges, and configure each node's parameters inline. The right panel shows real-time execution logs during a pipeline run. A second tab shows execution history.
+
+### Pipeline Canvas
+
+Nodes are dragged from the block palette onto the canvas using the HTML5 drag API. Each node type has a custom React component with color-coded styling:
+
+| Node | Color |
+|------|-------|
+| Treasury Source | Gold |
+| Department | Gold with utilization bar |
+| Employee | Green |
+| Contractor | Tan |
+| Approval | Purple |
+| Condition | Cyan (two output handles: True/False) |
+| Delay | Blue |
+
+During execution, nodes animate through status colors: gray (pending) → gold pulse (processing) → green (completed) or red (failed). Approval nodes pulse purple while awaiting signatures. The execution log streams entries in real-time by polling the server every 2 seconds and syncing state through a Zustand store.
+
+### Key Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `useVaultBalances` | On-chain multicall reading 5 vault values (liquid, USYC, total, yield, threshold); polls every 30s |
+| `useUserUSDCBalance` | Reads user's wallet USDC balance via ERC-20 `balanceOf`; polls every 15s |
+| `useDeposit` | Two-step mutation: `USDC.approve()` then `TreasuryVault.depositFunds()` |
+| `useWithdraw` | Calls `TreasuryVault.withdrawFunds()` |
+| `useSetThreshold` | Calls `TreasuryVault.setLiquidityThreshold()` (CFO only) |
+| `useFXQuote` | Fetches live FX quote with 25s stale time; auto-refreshes before 30s expiry |
+| `useOnChainSwap` | On-chain FX: `USDC.approve()` then `StableFX.executeSwap()` |
+| `useExecutePayout` | Calls `PayoutRouter.executePayout()` |
+| `useBatchPayout` | Batch payout execution |
+| `usePipelineExecution` | Polls active pipeline execution status every 2s |
+| `useApprovalSign` | Signs approval messages (EIP-191) for pipeline approval gates |
+| `useDashboardStats` | Aggregated dashboard metrics from API |
