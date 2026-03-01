@@ -9,16 +9,20 @@ Enterprise Treasury & FX Operations Platform on Arc blockchain. ArcVault lets fi
 
 ```mermaid
 flowchart TB
-  U["User"] --> FE["Frontend"]
-  FE --> ARC
+  U["User"] --> FE["Frontend · Next.js"]
+  FE --> |"deposit / withdraw"| TV
+  FE --> |"swap currencies"| SFX
+  FE --> |"run pipelines"| PR
 
-  subgraph ARC["Arc Testnet"]
-    TV["TreasuryVault"] <--> USYC["USYC Yield"]
+  subgraph ARC["Arc Testnet · Chain 5042002"]
+    direction TB
+    TV["TreasuryVault"] <--> USYC["USYC · Yield"]
     TV --> PR["PayoutRouter"]
-    PR <--> SFX["StableFX"]
+    PR <--> SFX["StableFX · FX"]
+    PR --> BM["BudgetManager"]
   end
 
-  ARC --> DB["PostgreSQL"]
+  ARC --> DB["PostgreSQL · Audit Trail"]
 ```
 
 ---
