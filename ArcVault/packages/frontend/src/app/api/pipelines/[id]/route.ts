@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { updatePipelineSchema, serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +7,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 // GET /api/pipelines/[id] — get a single pipeline with recent executions
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { serializeDecimals } = await import("@/lib/validations/api");
+
     const { id } = await params;
 
     const pipeline = await prisma.pipeline.findUnique({
@@ -41,6 +42,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 // PUT /api/pipelines/[id] — update a pipeline
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { updatePipelineSchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const { id } = await params;
     const body = await req.json();
     const parsed = updatePipelineSchema.safeParse(body);
@@ -88,6 +92,8 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 // DELETE /api/pipelines/[id] — delete a pipeline
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+
     const { id } = await params;
 
     const existing = await prisma.pipeline.findUnique({ where: { id } });

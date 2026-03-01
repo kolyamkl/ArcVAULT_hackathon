@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import prisma from "@/lib/prisma";
-import { createPipelineSchema, serializeDecimals } from "@/lib/validations/api";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/pipelines — list all pipelines ordered by most recently updated
 export async function GET() {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { serializeDecimals } = await import("@/lib/validations/api");
+
     const pipelines = await prisma.pipeline.findMany({
       orderBy: { updatedAt: "desc" },
     });
@@ -25,6 +26,9 @@ export async function GET() {
 // POST /api/pipelines — create a new pipeline
 export async function POST(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { createPipelineSchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const body = await req.json();
     const parsed = createPipelineSchema.safeParse(body);
 

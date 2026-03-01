@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { serializeDecimals } = await import("@/lib/validations/api");
+
     const { id } = await params;
 
     const payout = await prisma.payout.findUnique({ where: { id } });

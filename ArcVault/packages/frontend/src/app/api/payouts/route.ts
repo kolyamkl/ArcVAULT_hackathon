@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
-import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-import { createPayoutSchema, parsePagination, serializeDecimals } from "@/lib/validations/api";
 
 // GET /api/payouts — list payouts with pagination & optional status filter
 export async function GET(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { parsePagination, serializeDecimals } = await import("@/lib/validations/api");
+
     const { searchParams } = req.nextUrl;
     const { page, limit, skip, order } = parsePagination(searchParams);
     const status = searchParams.get("status") ?? undefined;
@@ -42,6 +42,10 @@ export async function GET(req: NextRequest) {
 // POST /api/payouts — create a single payout
 export async function POST(req: NextRequest) {
   try {
+    const { randomUUID } = await import("crypto");
+    const { default: prisma } = await import("@/lib/prisma");
+    const { createPayoutSchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const body = await req.json();
     const parsed = createPayoutSchema.safeParse(body);
 

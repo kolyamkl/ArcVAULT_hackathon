@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { executePipeline } from '@/lib/pipeline-engine';
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +15,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const { executionId } = await params;
 
   try {
+    const { default: prisma } = await import('@/lib/prisma');
+    const { executePipeline } = await import('@/lib/pipeline-engine');
+
     const body = await req.json();
     const { pipelineId, triggeredBy } = body;
     console.log(`[POST /api/pipelines/executions/${executionId}/process] Received: pipelineId=${pipelineId}, triggeredBy=${triggeredBy}`);
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     // Best-effort: mark execution as failed
     try {
+      const { default: prisma } = await import('@/lib/prisma');
       await prisma.pipelineExecution.update({
         where: { id: executionId },
         data: {

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/vault/status — latest vault snapshot
 export async function GET() {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { serializeDecimals } = await import("@/lib/validations/api");
+
     const snapshot = await prisma.vaultSnapshot.findFirst({
       orderBy: { timestamp: "desc" },
     });

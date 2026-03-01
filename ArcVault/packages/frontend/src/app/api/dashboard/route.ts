@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-import { serializeDecimals } from "@/lib/validations/api";
 
 // GET /api/dashboard — aggregated dashboard statistics
 export async function GET() {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { serializeDecimals } = await import("@/lib/validations/api");
+
     // Run all queries in parallel
     const [
       latestSnapshot,

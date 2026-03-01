@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { parsePagination, serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/fx/history — list FX quotes with pagination
 export async function GET(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { parsePagination, serializeDecimals } = await import("@/lib/validations/api");
+
     const { searchParams } = req.nextUrl;
     const { page, limit, skip } = parsePagination(searchParams);
 

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyMessage } from 'viem';
-import prisma from '@/lib/prisma';
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +28,9 @@ type RouteContext = { params: Promise<{ executionId: string }> };
  */
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
+    const { verifyMessage } = await import('viem');
+    const { default: prisma } = await import('@/lib/prisma');
+
     const { executionId } = await params;
     const { approverAddress, nodeId, signature } = await req.json();
 
@@ -127,6 +128,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
  */
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import('@/lib/prisma');
+
     const { executionId } = await params;
     const nodeId = req.nextUrl.searchParams.get('nodeId');
 

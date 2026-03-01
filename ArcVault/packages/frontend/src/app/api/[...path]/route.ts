@@ -1,17 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-export const dynamic = "force-dynamic";
-import {
-  mockDashboard,
-  mockVaultStatus,
-  mockVaultHistory,
-  mockVaultSnapshots,
-  getMockFXQuote,
-  mockFXHistory,
-  mockPayouts,
-  mockPipelines,
-  mockTransactionList,
-} from '@/lib/mock-data';
 import type {
   FXExecution,
   Payout,
@@ -19,6 +6,8 @@ import type {
   Pipeline,
   PipelineExecution,
 } from '@/types/api';
+
+export const dynamic = "force-dynamic";
 
 // ---------------------------------------------------------------------------
 // GET handler
@@ -28,6 +17,18 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const {
+    mockDashboard,
+    mockVaultStatus,
+    mockVaultHistory,
+    mockVaultSnapshots,
+    getMockFXQuote,
+    mockFXHistory,
+    mockPayouts,
+    mockPipelines,
+    mockTransactionList,
+  } = await import('@/lib/mock-data');
+
   const { path } = await params;
   const joined = path.join('/');
 
@@ -97,6 +98,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const {
+    mockPipelines,
+  } = await import('@/lib/mock-data');
+
   const { path } = await params;
   const joined = path.join('/');
 
@@ -193,6 +198,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const {
+    mockPipelines,
+  } = await import('@/lib/mock-data');
+
   const { path } = await params;
 
   // PUT /api/pipelines/[id]

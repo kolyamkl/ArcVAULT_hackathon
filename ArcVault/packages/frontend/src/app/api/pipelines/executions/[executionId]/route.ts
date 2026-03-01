@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { serializeDecimals } from '@/lib/validations/api';
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +12,9 @@ type RouteContext = { params: Promise<{ executionId: string }> };
  */
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import('@/lib/prisma');
+    const { serializeDecimals } = await import('@/lib/validations/api');
+
     const { executionId } = await params;
 
     const execution = await prisma.pipelineExecution.findUnique({

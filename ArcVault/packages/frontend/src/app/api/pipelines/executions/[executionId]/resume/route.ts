@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { executePipeline } from '@/lib/pipeline-engine';
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +14,9 @@ type RouteContext = { params: Promise<{ executionId: string }> };
  */
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import('@/lib/prisma');
+    const { executePipeline } = await import('@/lib/pipeline-engine');
+
     const { executionId } = await params;
 
     const execution = await prisma.pipelineExecution.findUnique({

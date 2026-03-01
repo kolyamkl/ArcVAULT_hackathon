@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-import {
-  transactionsQuerySchema,
-  parsePagination,
-  serializeDecimals,
-} from "@/lib/validations/api";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const {
+      transactionsQuerySchema,
+      parsePagination,
+      serializeDecimals,
+    } = await import("@/lib/validations/api");
+
     const { searchParams } = req.nextUrl;
 
     // Extract filter params

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import prisma from "@/lib/prisma";
-import { executePipelineSchema } from "@/lib/validations/api";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +8,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 // POST /api/pipelines/[id]/execute — trigger pipeline execution
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { executePipelineSchema } = await import("@/lib/validations/api");
+
     const { id } = await params;
     const body = await req.json();
     console.log(`[POST /api/pipelines/${id}/execute] Trigger received, body:`, body);

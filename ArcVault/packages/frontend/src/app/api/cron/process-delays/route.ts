@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { executePipeline } from "@/lib/pipeline-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +9,10 @@ export const dynamic = "force-dynamic";
  * Finds DelaySchedule rows whose resumeAt has passed and resumes their executions.
  */
 export async function GET(req: NextRequest) {
+  // Lazy imports — avoid top-level evaluation that crashes the build
+  const { default: prisma } = await import("@/lib/prisma");
+  const { executePipeline } = await import("@/lib/pipeline-engine");
+
   // Verify Vercel cron secret (standard pattern)
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;

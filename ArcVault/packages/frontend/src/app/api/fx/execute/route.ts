@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-import { getStableFXAdapter } from "@/services/index";
-import { fxExecuteSchema, serializeDecimals } from "@/lib/validations/api";
 
 // POST /api/fx/execute — execute a previously quoted FX swap
 export async function POST(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { getStableFXAdapter } = await import("@/services/index");
+    const { fxExecuteSchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const body = await req.json();
     const parsed = fxExecuteSchema.safeParse(body);
 

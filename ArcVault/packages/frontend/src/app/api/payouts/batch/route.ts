@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
-import prisma from "@/lib/prisma";
-import { batchPayoutSchema, serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/payouts/batch — create multiple payouts atomically
 export async function POST(req: NextRequest) {
   try {
+    const { randomUUID } = await import("crypto");
+    const { default: prisma } = await import("@/lib/prisma");
+    const { batchPayoutSchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const body = await req.json();
     const parsed = batchPayoutSchema.safeParse(body);
 

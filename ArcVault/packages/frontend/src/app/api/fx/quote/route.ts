@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getStableFXAdapter } from "@/services/index";
-import { fxQuoteQuerySchema, serializeDecimals } from "@/lib/validations/api";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/fx/quote — request a new FX quote
 export async function GET(req: NextRequest) {
   try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const { getStableFXAdapter } = await import("@/services/index");
+    const { fxQuoteQuerySchema, serializeDecimals } = await import("@/lib/validations/api");
+
     const { searchParams } = req.nextUrl;
 
     // Support both ?from=X&to=Y and ?pair=X/Y formats
