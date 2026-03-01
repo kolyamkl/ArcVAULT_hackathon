@@ -45,10 +45,13 @@ export function useOnChainSwap() {
       if (!account) throw new Error('No account connected');
       if (amount === 0n) throw new Error('Amount must be greater than zero');
 
+      const ZERO = '0x0000000000000000000000000000000000000000' as const;
+
       const fromToken = TOKEN_ADDRESSES[fromCurrency];
       const toToken = TOKEN_ADDRESSES[toCurrency];
-      if (!fromToken) throw new Error(`No on-chain token address for ${fromCurrency}`);
-      if (!toToken) throw new Error(`No on-chain token address for ${toCurrency}`);
+      if (!fromToken || fromToken === ZERO) throw new Error(`No on-chain token address configured for ${fromCurrency} — check NEXT_PUBLIC_${fromCurrency}_ADDRESS env var`);
+      if (!toToken || toToken === ZERO) throw new Error(`No on-chain token address configured for ${toCurrency} — check NEXT_PUBLIC_${toCurrency}_ADDRESS env var`);
+      if (STABLEFX_ADDRESS === ZERO) throw new Error('StableFX contract address not configured — check NEXT_PUBLIC_STABLEFX_ADDRESS env var');
 
       console.log('[useOnChainSwap] Starting on-chain swap:', {
         fromCurrency, toCurrency, amount: amount.toString(),

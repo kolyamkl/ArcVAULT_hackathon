@@ -6,8 +6,8 @@ export class RealUSYCAdapter implements IUSYCAdapter {
   private usycAddress: `0x${string}`;
 
   constructor() {
-    this.vaultAddress = getAddress((process.env.NEXT_PUBLIC_TREASURY_VAULT_ADDRESS ?? '0x0').trim());
-    this.usycAddress = getAddress((process.env.NEXT_PUBLIC_USYC_ADDRESS ?? '0x0').trim());
+    this.vaultAddress = getAddress((process.env.NEXT_PUBLIC_TREASURY_VAULT_ADDRESS ?? '0x0000000000000000000000000000000000000000').trim());
+    this.usycAddress = getAddress((process.env.NEXT_PUBLIC_USYC_ADDRESS ?? '0x0000000000000000000000000000000000000000').trim());
   }
 
   async deposit(amount: bigint): Promise<TxResult> {
