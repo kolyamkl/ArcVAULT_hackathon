@@ -185,12 +185,12 @@ export const mockVaultStatus: VaultStatus = {
 export const mockVaultHistory: VaultHistory = {
   entries: [
     { id: 'vh-001', type: 'DEPOSIT', amount: 500_000, timestamp: hoursAgo(2), txHash: '0xa1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2', status: 'COMPLETED' },
-    { id: 'vh-002', type: 'YIELD', amount: 342.18, timestamp: hoursAgo(6), txHash: '0xb2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3', status: 'COMPLETED' },
-    { id: 'vh-003', type: 'REBALANCE', amount: 200_000, timestamp: daysAgo(1), txHash: '0xc3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', status: 'COMPLETED' },
-    { id: 'vh-004', type: 'WITHDRAWAL', amount: 100_000, timestamp: daysAgo(2), txHash: '0xd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5', status: 'COMPLETED' },
+    { id: 'vh-002', type: 'SWEEP', amount: 342.18, timestamp: hoursAgo(6), txHash: '0xb2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3', status: 'COMPLETED' },
+    { id: 'vh-003', type: 'REDEEM', amount: 200_000, timestamp: daysAgo(1), txHash: '0xc3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', status: 'COMPLETED' },
+    { id: 'vh-004', type: 'WITHDRAW', amount: 100_000, timestamp: daysAgo(2), txHash: '0xd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5', status: 'COMPLETED' },
     { id: 'vh-005', type: 'DEPOSIT', amount: 750_000, timestamp: daysAgo(3), txHash: '0xe5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6', status: 'COMPLETED' },
-    { id: 'vh-006', type: 'YIELD', amount: 289.44, timestamp: daysAgo(5), txHash: '0xf6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1', status: 'COMPLETED' },
-    { id: 'vh-007', type: 'REBALANCE', amount: 150_000, timestamp: daysAgo(8), txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', status: 'COMPLETED' },
+    { id: 'vh-006', type: 'SWEEP', amount: 289.44, timestamp: daysAgo(5), txHash: '0xf6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1', status: 'COMPLETED' },
+    { id: 'vh-007', type: 'REDEEM', amount: 150_000, timestamp: daysAgo(8), txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', status: 'COMPLETED' },
     { id: 'vh-008', type: 'DEPOSIT', amount: 1_000_000, timestamp: daysAgo(14), txHash: '0x234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12', status: 'COMPLETED' },
   ],
   total: 8,
