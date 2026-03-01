@@ -252,9 +252,10 @@ async function executeFXConversion(
     },
   });
 
-  // Persist Transaction to DB
-  await prisma.transaction.create({
-    data: {
+  // Persist Transaction to DB (upsert to handle re-runs with same txHash)
+  await prisma.transaction.upsert({
+    where: { txHash: swapResult.txHash },
+    create: {
       type: 'FX_SWAP',
       txHash: swapResult.txHash,
       amount: quote.fromAmount,
@@ -267,6 +268,10 @@ async function executeFXConversion(
         rate: quote.rate,
       },
       chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID) || 1397,
+    },
+    update: {
+      status: 'COMPLETED',
+      amount: quote.fromAmount,
     },
   });
 
@@ -372,9 +377,10 @@ async function executePayoutNode(
     onChainPayoutId = Date.now(); // fallback
   }
 
-  // Persist Payout to DB
-  await prisma.payout.create({
-    data: {
+  // Persist Payout to DB (upsert to handle re-runs / duplicate onChainId)
+  await prisma.payout.upsert({
+    where: { onChainId: onChainPayoutId },
+    create: {
       onChainId: onChainPayoutId,
       recipient: walletAddress,
       amount: amount.toString(),
@@ -384,11 +390,19 @@ async function executePayoutNode(
       status: 'COMPLETED',
       txHash,
     },
+    update: {
+      recipient: walletAddress,
+      amount: amount.toString(),
+      targetCurrency: currency,
+      status: 'COMPLETED',
+      txHash,
+    },
   });
 
-  // Persist Transaction to DB
-  await prisma.transaction.create({
-    data: {
+  // Persist Transaction to DB (upsert to handle re-runs with same txHash)
+  await prisma.transaction.upsert({
+    where: { txHash },
+    create: {
       type: 'PAYOUT',
       txHash,
       toAddress: walletAddress,
@@ -402,6 +416,10 @@ async function executePayoutNode(
         ...(giftAmount > 0 && { giftAmount, giftNote }),
       },
       chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID) || 1397,
+    },
+    update: {
+      status: 'COMPLETED',
+      amount: amount.toString(),
     },
   });
 
