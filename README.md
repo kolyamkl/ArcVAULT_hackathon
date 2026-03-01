@@ -7,42 +7,38 @@ Enterprise Treasury & FX Operations Platform on Arc blockchain. ArcVault lets fi
   
 ## Architecture
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                    FRONTEND (Next.js)                         │
-│   Dashboard  ·  Vault  ·  FX Swap  ·  Pipeline Builder       │
-└───────┬──────────┬──────────┬──────────────┬──────────────────┘
-        │ read     │ write    │ write        │ write
-        │          │          │              │
-┌───────▼──────────▼──────────▼──────────────▼──────────────────┐
-│               ARC TESTNET  (Chain 5042002)                    │
-│                                                               │
-│   USDC ◄────────► TreasuryVault ◄────────► USYC              │
-│   EURC              │    │                 (yield)            │
-│                     │    └──────────────────────┐             │
-│                     ▼                           ▼             │
-│              PayoutRouter ◄──────────► StableFX               │
-│                     │                  (USDC ↔ EURC)          │
-│                     ▼                                         │
-│              BudgetManager                                    │
-│              (spending caps)                                  │
-│                                                               │
-└───────────────────────┬───────────────────────────────────────┘
-                        │ indexed
-                        ▼
-                   PostgreSQL
-                (audit trail + UI)
-```
+```mermaid
+flowchart TB
+  U["CFO / Finance Team"] --> DASH["Dashboard"]
+  U --> VAULT["Vault Page"]
+  U --> FX["FX Swap Page"]
+  U --> PB["Pipeline Builder"]
 
-**Connections to Arc Testnet:**
+  DASH --> |"read balances, yield, APY"| TV
+  VAULT --> |"deposit / withdraw / threshold"| TV
+  FX --> |"requestQuote / executeSwap"| SFX
+  PB --> |"executePayout per recipient"| PR
 
-| Frontend Feature | Contract Calls |
-|-----------------|----------------|
-| **Dashboard** | Reads `TreasuryVault.getLiquidBalance()`, `getTotalValue()`, `getYieldAccrued()` via multicall |
-| **Vault Page** | User signs `USDC.approve()` + `TreasuryVault.depositFunds()`; CFO calls `setLiquidityThreshold()` |
-| **FX Swap** | Calls `StableFX.requestQuote()` then `executeSwap()` — atomic on-chain USDC/EURC swap |
-| **Pipeline Engine** | Server-side viem client calls `PayoutRouter.executePayout()` per recipient; uses `StableFX` for FX nodes |
-| **PostgreSQL** | Mirrors every on-chain write so the frontend never scans the chain for history |
+  subgraph FRONTEND["Frontend · Next.js"]
+    DASH
+    VAULT
+    FX
+    PB
+  end
+
+  subgraph ARC["Arc Testnet · Chain 5042002"]
+    direction TB
+    USDC["USDC"] <--> TV["TreasuryVault"]
+    TV <--> USYC["USYC · Yield Token"]
+    TV --> PR["PayoutRouter"]
+    PR <--> SFX["StableFX · USDC ↔ EURC"]
+    PR --> BM["BudgetManager · Spending Caps"]
+    EURC["EURC"] <--> SFX
+  end
+
+  PR --> |"tx hashes + events"| DB["PostgreSQL · Audit Trail"]
+  TV --> |"balances indexed"| DB
+```
 
 ---
 
